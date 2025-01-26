@@ -1,0 +1,203 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Genre;
+use App\Models\Movie;
+use App\Models\Movie_genre;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
+
+class MovieController extends Controller
+{
+    public function index()
+    {
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date')
+            ->get();
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $movies);
+    }
+
+    public function store(Request $request)
+    {
+
+        $rules = $this->validateCreateMovie();
+        $alert = $this->alertCreateMovie();
+        $validator = Validator::make($request->all(), $rules, $alert);
+
+        if ($validator->fails()) {
+            return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+        } else {
+            //Kiểm tra sự tồn tại của các thể loại trong yêu cầu tạo phim.
+            //-> whereIn để tìm kiếm tất cả các bản ghi trong bảng genres có id trong mảng
+            //-> == count để đếm số lượng bản ghi tìm thấy với số lượng id trong mảng 
+            $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
+            if (!$genresExist) {
+                return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
+            }
+            $movie = $request->all();
+            if ($request->hasFile('poster')) {
+                $file = $request->file('poster');
+                // Tạo ngẫu nhiên tên ảnh 12 kí tự
+                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+                // Đường dẫn ảnh
+                $imageDirectory = 'images/movies/';
+
+                $file->move($imageDirectory, $imageName);
+                $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+
+                $movie = Movie::create([
+                    'title' => $request->title,
+                    'description' => $request->description,
+                    'poster' => $path_image,
+                    'fileName' => $imageName,
+                    'trailer' => $request->trailer,
+                    'duration' => $request->duration,
+                    'rating' => $request->rating,
+                    'release_date' => $request->release_date,
+                ]);
+                $movie['genres'] = $request->genres;
+
+                // Khi thêm phim thì cũng phải thêm thể loại cho phim đó.
+                // Lấy ra id của phim vừa thêm (mới nhất)
+                $latestIdMovie = Movie::orderBy('id','desc')->first()->id;
+                foreach($request->genres as $genre){
+                    Movie_genre::create([
+                        'movie_id' => $latestIdMovie,
+                        'genre_id' => $genre
+                    ]);
+                }
+
+                return $this->responseCommon(201, "Thêm mới phim thành công.", $movie);
+            }
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $movie = Movie::findOrFail($id);
+
+            $rules = $this->validateUpdateMovie($id);
+            $alert = $this->alertUpdateMovie();
+            $validator = Validator::make($request->all(), $rules, $alert);
+
+            if ($validator->fails()) {
+                return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+            } else {
+                if ($request->hasFile('poster')) {
+                    $file = $request->file('poster');
+                    // Đường dẫn ảnh
+                    $imageDirectory = 'images/movies/';
+                    // Xóa ảnh nếu ảnh cũ
+                    File::delete($imageDirectory . $movie->fileName);
+                    // Tạo ngẫu nhiên tên ảnh 12 kí tự
+                    $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+
+                    $file->move($imageDirectory, $imageName);
+
+                    $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                } else {
+                    $path_image = $movie->poster;
+                }
+                $movie->update([
+                    'title' => $request->title,
+                    'description' => $request->description,
+                    'poster' => $path_image,
+                    'fileName' => $imageName ?? $movie->fileName, // Dùng toán tử 3 ngôi, nếu không thêm ảnh mới thì giữ lại tên ảnh cũ
+                    'trailer' => $request->trailer,
+                    'duration' => $request->duration,
+                    'rating' => $request->rating,
+                    'release_date' => $request->release_date,
+                ]);
+                return $this->responseCommon(200, "Cập nhật phim thành công.", $movie);
+            }
+        } catch (\Exception $e) {
+            return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $movie = Movie::findOrFail($id);
+            return $this->responseCommon(200, "Tìm phim thành công.", $movie);
+        } catch (\Exception $e) {
+            return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $movie = Movie::findOrFail($id);
+
+            // Đường dẫn ảnh
+            $imageDirectory = 'images/movies/';
+            // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
+            File::delete($imageDirectory . $movie->fileName);
+
+            $movie->delete();
+
+            return $this->responseCommon(200, "Xóa phim thành công.", []);
+        } catch (\Exception $e) {
+            return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
+        }
+    }
+
+    //Validate
+
+    public function validateCreateMovie()
+    {
+        return [
+            'title' => 'required|unique:movies|min:5|max:255',
+            'description' => 'required|min:5|max:500',
+            'poster' => 'required|mimes:jpeg,jpg,png',
+            'trailer' => 'required',
+            'duration' => 'required',
+            'rating' => 'required',
+            'release_date' => 'required',
+            'genres' => 'required|array ',
+        ];
+    }
+
+    public function alertCreateMovie()
+    {
+        return [
+            'required' => 'Không được để trống thông tin :attribute.',
+            'title.unique' => 'Tiêu đề phim không được trùng.',
+            'title.min' => 'Tiêu đề phim phải ít nhất 5 kí tự.',
+            'title.max' => 'Tiêu đề phim quá dài.',
+            'description.min' => 'Mô tả phim phải ít nhất 5 kí tự.',
+            'description.max' => 'Mô tả phim quá dài.',
+            'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
+        ];
+    }
+
+    public function validateUpdateMovie($id)
+    {
+        return [
+            'title' => 'required|min:5|max:255|unique:movies,title,' . $id,
+            'description' => 'required|min:5|max:500',
+            'poster' => 'mimes:jpeg,jpg,png',
+            'trailer' => 'required',
+            'duration' => 'required',
+            'rating' => 'required',
+            'release_date' => 'required',
+        ];
+    }
+
+    public function alertUpdateMovie()
+    {
+        return [
+            'required' => 'Không được để trống thông tin :attribute.',
+            'title.unique' => 'Tiêu đề phim không được trùng.',
+            'title.min' => 'Tiêu đề phim phải ít nhất 5 kí tự.',
+            'title.max' => 'Tiêu đề phim quá dài.',
+            'description.min' => 'Mô tả phim phải ít nhất 5 kí tự.',
+            'description.max' => 'Mô tả phim quá dài.',
+            'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
+        ];
+    }
+}

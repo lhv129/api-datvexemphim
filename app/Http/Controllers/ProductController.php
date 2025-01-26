@@ -28,7 +28,7 @@ class ProductController extends Controller
             return $this->responseValidate(422, "Dữ liệu không hợp lệ", $validator->errors());
         } else {
             $product = $request->all();
-            if ($request->file('image')) {
+            if ($request->hasFile('image')) {
                 $file = $request->file('image');
                 // Tạo ngẫu nhiên tên ảnh 12 kí tự
                 $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
@@ -118,6 +118,8 @@ class ProductController extends Controller
         }
     }
 
+
+    // Validate
     public function validateCreateProduct()
     {
         return [
