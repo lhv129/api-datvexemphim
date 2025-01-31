@@ -54,7 +54,6 @@ class MovieController extends Controller
             if (!$genresExist) {
                 return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
             }
-            $movie = $request->all();
             if ($request->hasFile('poster')) {
                 $file = $request->file('poster');
                 // Tạo ngẫu nhiên tên ảnh 12 kí tự
@@ -173,6 +172,9 @@ class MovieController extends Controller
             $imageDirectory = 'images/movies/';
             // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
             File::delete($imageDirectory . $movie->fileName);
+
+            //Xóa luôn những thể loại phim đó.
+            $movie_genres = Movie_genre::where('movie_id',$id)->delete();
 
             $movie->delete();
 

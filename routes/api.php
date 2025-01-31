@@ -1,10 +1,9 @@
 <?php
 
+use App\Http\Controllers\BannerController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
-use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,3 +37,10 @@ Route::post('genres/create',[GenreController::class,'store']);
 Route::put('genres/update/{id}',[GenreController::class,'update']);
 Route::get('genres/show/{id}',[GenreController::class,'show']);
 Route::delete('genres/delete/{id}',[GenreController::class,'destroy']);
+
+// Api Banners
+Route::get('banners',[BannerController::class,'index']);
+Route::post('banners/create',[BannerController::class,'store']);
+Route::put('banners/update/{id}',[BannerController::class,'update']);
+Route::get('banners/show/{id}',[BannerController::class,'show']);
+Route::delete('banners/delete/{id}',[BannerController::class,'destroy']);
