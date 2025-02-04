@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
@@ -17,30 +18,44 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Api Login,logout
+Route::group([
+
+    'middleware' => 'api',
+    'prefix' => 'auth'
+
+], function ($router) {
+
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::get('profile', [AuthController::class, 'profile']);
+});
+
 // Api Products
-Route::get('products',[ProductController::class,'index']);
-Route::post('products/create',[ProductController::class,'store']);
-Route::put('products/update/{id}',[ProductController::class,'update']);
-Route::get('products/show/{id}',[ProductController::class,'show']);
-Route::delete('products/delete/{id}',[ProductController::class,'destroy']);
+Route::get('products', [ProductController::class, 'index']);
+Route::post('products/create', [ProductController::class, 'store']);
+Route::put('products/update/{id}', [ProductController::class, 'update']);
+Route::get('products/show/{id}', [ProductController::class, 'show']);
+Route::delete('products/delete/{id}', [ProductController::class, 'destroy']);
 
 // Api Movies
-Route::get('movies',[MovieController::class,'index']);
-Route::post('movies/create',[MovieController::class,'store']);
-Route::put('movies/update/{id}',[MovieController::class,'update']);
-Route::get('movies/show/{id}',[MovieController::class,'show']);
-Route::delete('movies/delete/{id}',[MovieController::class,'destroy']);
+Route::get('movies', [MovieController::class, 'index']);
+Route::post('movies/create', [MovieController::class, 'store']);
+Route::put('movies/update/{id}', [MovieController::class, 'update']);
+Route::get('movies/show/{id}', [MovieController::class, 'show']);
+Route::delete('movies/delete/{id}', [MovieController::class, 'destroy']);
 
 // Api Genres
-Route::get('genres',[GenreController::class,'index']);
-Route::post('genres/create',[GenreController::class,'store']);
-Route::put('genres/update/{id}',[GenreController::class,'update']);
-Route::get('genres/show/{id}',[GenreController::class,'show']);
-Route::delete('genres/delete/{id}',[GenreController::class,'destroy']);
+Route::get('genres', [GenreController::class, 'index']);
+Route::post('genres/create', [GenreController::class, 'store']);
+Route::put('genres/update/{id}', [GenreController::class, 'update']);
+Route::get('genres/show/{id}', [GenreController::class, 'show']);
+Route::delete('genres/delete/{id}', [GenreController::class, 'destroy']);
 
 // Api Banners
-Route::get('banners',[BannerController::class,'index']);
-Route::post('banners/create',[BannerController::class,'store']);
-Route::put('banners/update/{id}',[BannerController::class,'update']);
-Route::get('banners/show/{id}',[BannerController::class,'show']);
-Route::delete('banners/delete/{id}',[BannerController::class,'destroy']);
+Route::get('banners', [BannerController::class, 'index']);
+Route::post('banners/create', [BannerController::class, 'store']);
+Route::put('banners/update/{id}', [BannerController::class, 'update']);
+Route::get('banners/show/{id}', [BannerController::class, 'show']);
+Route::delete('banners/delete/{id}', [BannerController::class, 'destroy']);
