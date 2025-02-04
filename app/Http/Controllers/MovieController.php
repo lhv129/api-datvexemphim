@@ -45,7 +45,7 @@ class MovieController extends Controller
         $validator = Validator::make($request->all(), $rules, $alert);
 
         if ($validator->fails()) {
-            return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+            return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
         } else {
             //Kiểm tra sự tồn tại của các thể loại trong yêu cầu tạo phim.
             //-> whereIn để tìm kiếm tất cả các bản ghi trong bảng genres có id trong mảng
@@ -101,7 +101,7 @@ class MovieController extends Controller
             $validator = Validator::make($request->all(), $rules, $alert);
 
             if ($validator->fails()) {
-                return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+                return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
             } else {
                 $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
                 if (!$genresExist) {
