@@ -5,6 +5,7 @@ use App\Http\Controllers\BannerController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProvinceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,6 +54,12 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('banners/update/{id}', [BannerController::class, 'update']);
     Route::get('banners/show/{id}', [BannerController::class, 'show']);
     Route::delete('banners/delete/{id}', [BannerController::class, 'destroy']);
+
+     // Api Provinces
+     Route::post('provinces/create', [ProvinceController::class, 'store']);
+     Route::put('provinces/update/{id}', [ProvinceController::class, 'update']);
+     Route::get('provinces/show/{id}', [ProvinceController::class, 'show']);
+     Route::delete('provinces/delete/{id}', [ProvinceController::class, 'destroy']);
 });
 
 
@@ -70,3 +77,6 @@ Route::get('genres', [GenreController::class, 'index']);
 
 // Api Banners
 Route::get('banners', [BannerController::class, 'index']);
+
+// Api Provinces
+Route::get('provinces', [ProvinceController::class, 'index']);
