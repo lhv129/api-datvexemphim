@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -35,6 +36,49 @@ class AuthController extends Controller
         $refreshToken = $this->createRefreshToken();
 
         return $this->respondWithToken($token, $refreshToken);
+    }
+
+    public function register(Request $request)
+    {
+        $rules = $this->validateRegister();
+        $alert = $this->alertRegister();
+        $validator = Validator::make($request->all(), $rules, $alert);
+
+        if ($validator->fails()) {
+            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
+        }
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            // Tạo ngẫu nhiên tên ảnh 12 kí tự
+            $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+            // Đường dẫn ảnh
+            $imageDirectory = 'images/users/avatars/';
+
+            $file->move($imageDirectory, $imageName);
+            $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role_id' => 2,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'birthday' => $request->birthday,
+            'avatar' => $path_image,
+            'fileName' => $imageName,
+        ]);
+        $token = JWTAuth::fromUser($user);
+
+        // Trả về access_token và thông tin user khi đăng ký thành công
+        return $this->responseCommon(201, "Đăng ký thành công", [
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => $user,
+        ]);
     }
 
     public function profile()
@@ -114,6 +158,31 @@ class AuthController extends Controller
         return [
             'required' => 'Không được để trống thông tin :attribute.',
             'email.email' => 'Email không đúng định dạng'
+        ];
+    }
+
+    public function validateRegister()
+    {
+        return [
+            'name' => 'required|unique:users,name',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|max:255',
+            'phone' => 'required|regex:/^(0)(98)[0-9]{7}$/',
+            'address' => 'required|min:6|max:255',
+            'birthday' => 'required',
+            'avatar' => 'required|mimes:jpeg,jpg,png',
+        ];
+    }
+
+    public function alertRegister()
+    {
+        return [
+            'required' => 'Không được để trống thông tin :attribute.',
+            'email.email' => 'Email không đúng định dạng',
+            'min' => ':attribute. tối thiểu ít nhất 6 kí tự',
+            'max' => ':attribute. quá dài, vui lòng nhập lại',
+            'phone.regex' => 'Sai định dạng số điện thoại, vui lòng kiểm tra lại',
+            'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
         ];
     }
 }
