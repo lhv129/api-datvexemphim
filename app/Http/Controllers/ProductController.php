@@ -25,7 +25,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), $rules, $alert);
 
         if ($validator->fails()) {
-            return $this->responseValidate(422, "Dữ liệu không hợp lệ", $validator->errors());
+            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
         } else {
             $product = $request->all();
             if ($request->hasFile('image')) {
@@ -60,7 +60,7 @@ class ProductController extends Controller
             $validator = Validator::make($request->all(), $rules, $alert);
 
             if ($validator->fails()) {
-                return $this->responseValidate(422, "Dữ liệu không hợp lệ", $validator->errors());
+                return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
             } else {
                 if ($request->hasFile('image')) {
                     $file = $request->file('image');

@@ -26,7 +26,7 @@ class GenreController extends Controller
             'unique' => 'Tên thể loại không được trùng.',
         ]);
         if ($validator->fails()) {
-            return $this->responseValidate(422, "Dữ liệu không hợp lệ", $validator->errors());
+            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
         } else {
             $genre = $request->all();
             Genre::create($genre);
@@ -48,7 +48,7 @@ class GenreController extends Controller
                 'unique' => 'Tên thể loại không được trùng.',
             ]);
             if ($validator->fails()) {
-                return $this->responseValidate(422, "Dữ liệu không hợp lệ", $validator->errors());
+                return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
             } else {
                 $genre->update([
                     'name' => $request->name

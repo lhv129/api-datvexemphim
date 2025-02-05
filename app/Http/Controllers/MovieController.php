@@ -45,7 +45,7 @@ class MovieController extends Controller
         $validator = Validator::make($request->all(), $rules, $alert);
 
         if ($validator->fails()) {
-            return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+            return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
         } else {
             //Kiểm tra sự tồn tại của các thể loại trong yêu cầu tạo phim.
             //-> whereIn để tìm kiếm tất cả các bản ghi trong bảng genres có id trong mảng
@@ -54,7 +54,6 @@ class MovieController extends Controller
             if (!$genresExist) {
                 return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
             }
-            $movie = $request->all();
             if ($request->hasFile('poster')) {
                 $file = $request->file('poster');
                 // Tạo ngẫu nhiên tên ảnh 12 kí tự
@@ -102,7 +101,7 @@ class MovieController extends Controller
             $validator = Validator::make($request->all(), $rules, $alert);
 
             if ($validator->fails()) {
-                return $this->responseValidate(422, 'Dữ liệu không hợp lệ', $validator->errors());
+                return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
             } else {
                 $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
                 if (!$genresExist) {
@@ -173,6 +172,9 @@ class MovieController extends Controller
             $imageDirectory = 'images/movies/';
             // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
             File::delete($imageDirectory . $movie->fileName);
+
+            //Xóa luôn những thể loại phim đó.
+            $movie_genres = Movie_genre::where('movie_id',$id)->delete();
 
             $movie->delete();
 
