@@ -98,7 +98,6 @@ class AuthController extends Controller
 
         return $this->responseCommon(200, 'Đăng xuất thành công', []);
     }
-
     public function refresh()
     {
         $refreshToken = request()->refresh_token;
@@ -120,8 +119,6 @@ class AuthController extends Controller
             return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
         }
     }
-
-
 
     private function respondWithToken($token, $refreshToken)
     {
