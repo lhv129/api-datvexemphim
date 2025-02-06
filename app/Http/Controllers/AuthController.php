@@ -99,12 +99,8 @@ class AuthController extends Controller
         return $this->responseCommon(200, 'Đăng xuất thành công', []);
     }
 
-    public function refresh(Request $request)
+    public function refresh()
     {
-        $device_id = md5($request->userAgent());
-        dd($device_id);
-
-
         $refreshToken = request()->refresh_token;
         try {
             $decoded = JWTAuth::getJWTProvider()->decode($refreshToken);
