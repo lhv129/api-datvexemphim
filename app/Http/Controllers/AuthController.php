@@ -76,7 +76,7 @@ class AuthController extends Controller
         return $this->responseCommon(201, "Đăng ký thành công", [
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => JWTAuth::getTTL() * 60,
             'user' => $user,
         ]);
     }
@@ -97,28 +97,54 @@ class AuthController extends Controller
         return $this->responseCommon(200, 'Đăng xuất thành công', []);
     }
 
+    // public function refresh()
+    // {
+    //     $refreshToken = request()->refresh_token;
+    //     try {
+    //         $decoded = JWTAuth::getJWTProvider()->decode($refreshToken);
+    //         // Cấp lại token mới
+    //         // -> Lấy thông tin user
+    //         $user = User::find($decoded['user_id']);
+    //         if (!$user) {
+    //             return $this->responseError(500, 'User không tồn tại', []);
+    //         }
+
+    //         // auth()->invalidate(); // Vô hiệu hóa access_token cũ
+
+
+    //         $token = auth('api')->login($user);
+    //         $refreshToken = $this->createRefreshToken(); // Tạo mới token
+
+    //         return $this->respondWithToken($token, $refreshToken);
+    //     } catch (JWTException $e) {
+    //         return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
+    //     }
+    // }
     public function refresh()
-    {
-        $refreshToken = request()->refresh_token;
-        try {
-            $decoded = JWTAuth::getJWTProvider()->decode($refreshToken);
-            // Cấp lại token mới
-            // -> Lấy thông tin user
-            $user = User::find($decoded['user_id']);
-            if (!$user) {
-                return $this->responseError(500, 'User không tồn tại', []);
-            }
+{
+    $refreshToken = request()->refresh_token;
+    try {
+        $decoded = JWTAuth::getJWTProvider()->decode($refreshToken);
 
-            auth()->invalidate(); // Vô hiệu hóa access_token cũ
-
-            $token = auth('api')->login($user);
-            $refreshToken = $this->createRefreshToken(); // Tạo mới token
-
-            return $this->respondWithToken($token, $refreshToken);
-        } catch (JWTException $e) {
-            return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
+        // Cấp lại token mới
+        $user = User::find($decoded['user_id']);
+        if (!$user) {
+            return $this->responseError(500, 'User không tồn tại', []);
         }
+
+        // Vô hiệu hóa refresh_token cũ
+        JWTAuth::invalidate($refreshToken); // Vô hiệu hóa refreshToken cũ
+
+        // Tạo mới access_token
+        $token = JWTAuth::fromUser($user);
+        $newRefreshToken = $this->createRefreshToken(); // Tạo mới refresh token
+
+        return $this->respondWithToken($token, $newRefreshToken);
+    } catch (JWTException $e) {
+        return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
     }
+}
+
 
 
     private function respondWithToken($token, $refreshToken)
@@ -127,7 +153,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => JWTAuth::getTTL() * 60,
             'user' => auth('api')->user(),
         ]);
     }
