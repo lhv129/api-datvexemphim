@@ -60,10 +60,8 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
 // Api Products
 Route::get('products', [ProductController::class, 'index']);
 
-
 // Api Movies
 Route::get('movies', [MovieController::class, 'index']);
-
 
 // Api Genres
 Route::get('genres', [GenreController::class, 'index']);
