@@ -7,6 +7,8 @@ use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProvinceController;
+use App\Http\Controllers\ScreenController;
+use App\Http\Controllers\SeatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,6 +69,19 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('cinemas/update/{id}', [CinemaController::class, 'update']);
     Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
     Route::delete('cinemas/delete/{id}', [CinemaController::class, 'destroy']);
+
+    // Api Screens
+    Route::post('screens/create', [ScreenController::class, 'store']);
+    Route::put('screens/update/{id}', [ScreenController::class, 'update']);
+    Route::get('screens/show/{id}', [ScreenController::class, 'show']);
+    Route::delete('screens/delete/{id}', [ScreenController::class, 'destroy']);
+
+     // Api Seats
+    Route::post('seats/create', [SeatController::class, 'store']);
+    Route::put('seats/update/{id}', [SeatController::class, 'update']);
+    Route::get('seats/show/{id}', [SeatController::class, 'show']);
+    Route::delete('seats/delete/{id}', [SeatController::class, 'destroy']);
+
 });
 
 
@@ -88,3 +103,9 @@ Route::get('provinces', [ProvinceController::class, 'index']);
 
 // Api Cinemas
 Route::get('cinemas', [CinemaController::class, 'index']);
+
+// Api Screens
+Route::get('screens', [ScreenController::class, 'index']);
+
+// Api Seats
+Route::get('seats', [SeatController::class, 'index']);

@@ -22,4 +22,7 @@ class Cinema extends Model
     public function province() {
         return $this->belongsTo(Province::class,'province_id','id');
     }
+    public function screen() {
+        return $this->hasMany(Screen::class,'cinema_id','id');
+    }
 }
