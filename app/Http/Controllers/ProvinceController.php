@@ -62,7 +62,8 @@ class ProvinceController extends Controller
 
     public function validateCreateProvince(){
         return [
-            'name' => 'required|unique:provinces,name',
+
+            'name' => 'required|unique:provinces,name,NULL,id,deleted_at,NULL',
         ];
     }
     public function alertCreateProvince(){
