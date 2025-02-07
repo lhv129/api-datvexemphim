@@ -126,7 +126,8 @@ class AuthController extends Controller
             'access_token' => $token,
             'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
-            'expires_in' => JWTAuth::getTTL() * 60,
+            // 'expires_in' => JWTAuth::getTTL() * 60,
+            'expires_in' => config('jwt.ttl') * 60,
             'user' => auth('api')->user(),
         ]);
     }
