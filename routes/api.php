@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
@@ -55,11 +56,17 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::get('banners/show/{id}', [BannerController::class, 'show']);
     Route::delete('banners/delete/{id}', [BannerController::class, 'destroy']);
 
-     // Api Provinces
-     Route::post('provinces/create', [ProvinceController::class, 'store']);
-     Route::put('provinces/update/{id}', [ProvinceController::class, 'update']);
-     Route::get('provinces/show/{id}', [ProvinceController::class, 'show']);
-     Route::delete('provinces/delete/{id}', [ProvinceController::class, 'destroy']);
+    // Api Provinces
+    Route::post('provinces/create', [ProvinceController::class, 'store']);
+    Route::put('provinces/update/{id}', [ProvinceController::class, 'update']);
+    Route::get('provinces/show/{id}', [ProvinceController::class, 'show']);
+    Route::delete('provinces/delete/{id}', [ProvinceController::class, 'destroy']);
+
+    // Api Cinemas
+    Route::post('cinemas/create', [CinemaController::class, 'store']);
+    Route::put('cinemas/update/{id}', [CinemaController::class, 'update']);
+    Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
+    Route::delete('cinemas/delete/{id}', [CinemaController::class, 'destroy']);
 });
 
 
@@ -80,3 +87,6 @@ Route::get('banners', [BannerController::class, 'index']);
 
 // Api Provinces
 Route::get('provinces', [ProvinceController::class, 'index']);
+
+// Api Cinemas
+Route::get('cinemas', [CinemaController::class, 'index']);
