@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
@@ -95,6 +96,12 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('showtimes/update/{id}', [ShowtimeController::class, 'update']);
     Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
     Route::delete('showtimes/delete/{id}', [ShowtimeController::class, 'destroy']);
+
+    // Api blogs
+    Route::post('blogs/create', [BlogController::class, 'store']);
+    Route::put('blogs/update/{id}', [BlogController::class, 'update']);
+    Route::get('blogs/show/{id}', [BlogController::class, 'show']);
+    Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
 });
 
 
@@ -128,3 +135,6 @@ Route::get('promocodes', [PromocodeController::class, 'index']);
 
 // Api Showtimes
 Route::get('showtimes', [ShowtimeController::class, 'index']);
+
+// Api blogs
+Route::get('blogs', [BlogController::class, 'index']);
