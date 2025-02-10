@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('cinemas', function (Blueprint $table) {
             $table->id();
 
-            $table->string('code', 50)->unique();
-            $table->string('name', 255);
+            $table->unique(['code', 'province_id']);
+            $table->unique(['name', 'province_id']);
             $table->string('address');
             $table->string('image', 255);
             $table->string('contact', 50);
