@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\ProvinceController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -95,6 +97,16 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('showtimes/update/{id}', [ShowtimeController::class, 'update']);
     Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
     Route::delete('showtimes/delete/{id}', [ShowtimeController::class, 'destroy']);
+
+    // Api blogs
+    Route::post('blogs/create', [BlogController::class, 'store']);
+    Route::put('blogs/update/{id}', [BlogController::class, 'update']);
+    Route::get('blogs/show/{id}', [BlogController::class, 'show']);
+    Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
+
+    //Api ticket
+    Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
+    Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
 });
 
 
@@ -128,3 +140,13 @@ Route::get('promocodes', [PromocodeController::class, 'index']);
 
 // Api Showtimes
 Route::get('showtimes', [ShowtimeController::class, 'index']);
+
+// Api blogs
+Route::get('blogs', [BlogController::class, 'index']);
+
+// Các route liên quan đến vé (cần đăng nhập)
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('tickets', [TicketController::class, 'index']);     // Lấy danh sách vé của người dùng
+    Route::post('tickets', [TicketController::class, 'store']);    // Đặt vé mới
+    Route::get('tickets/{id}', [TicketController::class, 'show']); // Lấy chi tiết vé theo ID
+});
