@@ -6,9 +6,11 @@ use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\ProvinceController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
+use App\Http\Controllers\ShowtimeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -76,12 +78,23 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::get('screens/show/{id}', [ScreenController::class, 'show']);
     Route::delete('screens/delete/{id}', [ScreenController::class, 'destroy']);
 
-     // Api Seats
+    // Api Seats
     Route::post('seats/create', [SeatController::class, 'store']);
     Route::put('seats/update/{id}', [SeatController::class, 'update']);
     Route::get('seats/show/{id}', [SeatController::class, 'show']);
     Route::delete('seats/delete/{id}', [SeatController::class, 'destroy']);
 
+    // Api Promo_codes
+    Route::post('promocodes/create', [PromocodeController::class, 'store']);
+    Route::put('promocodes/update/{id}', [PromocodeController::class, 'update']);
+    Route::get('promocodes/show/{id}', [PromocodeController::class, 'show']);
+    Route::delete('promocodes/delete/{id}', [PromocodeController::class, 'destroy']);
+
+    // Api Showtimes
+    Route::post('showtimes/create', [ShowtimeController::class, 'store']);
+    Route::put('showtimes/update/{id}', [ShowtimeController::class, 'update']);
+    Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
+    Route::delete('showtimes/delete/{id}', [ShowtimeController::class, 'destroy']);
 });
 
 
@@ -109,3 +122,9 @@ Route::get('screens', [ScreenController::class, 'index']);
 
 // Api Seats
 Route::get('seats', [SeatController::class, 'index']);
+
+// Api Promo_codes
+Route::get('promocodes', [PromocodeController::class, 'index']);
+
+// Api Showtimes
+Route::get('showtimes', [ShowtimeController::class, 'index']);
