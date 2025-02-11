@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Promo_code;
 use App\Models\Seat;
+use App\Models\Showtime;
 use App\Models\Ticket;
 use App\Models\TicketDetail;
 use App\Models\TicketProductDetail;
@@ -49,6 +50,15 @@ class TicketController extends Controller
 
         if ($validator->fails()) {
             return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
+        }
+
+        // Kiểm tra suất chiếu hết hạn chưa
+        $showtime = Showtime::find($request->showtime_id);
+        if (!$showtime) {
+            return $this->responseError(404, 'Suất chiếu không tồn tại.');
+        }
+        if (now()->greaterThan($showtime->end_time)) {
+            return $this->responseError(400, 'Suất chiếu đã kết thúc, không thể đặt vé.');
         }
 
         $seats = Seat::whereIn('id', $request->seat_ids)->where('status', 'available')->get();
