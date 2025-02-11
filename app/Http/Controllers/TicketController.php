@@ -31,7 +31,7 @@ class TicketController extends Controller
                 // 'seats' => $ticket->details->map(function ($detail) {
                 //     return $detail->seat->number;
                 // }),
-                'total_amount' => $ticket->total_amount,
+                'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
                 'status' => $ticket->status
             ];
         });
@@ -118,25 +118,28 @@ class TicketController extends Controller
             'ticket_code' => $ticket->code,
             'movie_name' => $ticket->showtime->movie->title,
             'showtime' => $ticket->showtime->start_time,
+            'screen' => $ticket->showtime->screen->name,
+            'cinema' => $ticket->showtime->screen->cinema->name,
+            'province' => $ticket->showtime->screen->cinema->province->name,
             'seats' => $ticket->ticketDetails->map(function ($detail) {
                 return [
                     'seat_row' => $detail->seat->row,
                     'seat_number' => $detail->seat->number,
-                    'price' => $detail->price
+                    'price' => number_format($detail->price, 0, ',', '.') . ' đ'
                 ];
             }),
             'products' => $ticket->ticketProductDetails->map(function ($productDetail) {
                 return [
                     'product_name' => optional($productDetail->product)->name,
                     'quantity' => $productDetail->quantity,
-                    'unit_price' => $productDetail->price / $productDetail->quantity,
-                    'total_price' => $productDetail->price
+                    'unit_price' => number_format($productDetail->price / $productDetail->quantity, 0, ',', '.') . ' đ',
+                    'total_price' => number_format($productDetail->price, 0, ',', '.') . ' đ'
                 ];
             }),
-            'total_amount' => $totalBeforeDiscount,
+            'total_amount' => number_format($totalBeforeDiscount, 0, ',', '.') . ' đ',
             'promo_code' => optional($ticket->promoCode)->code ?? null,
-            'discount' => $discount,
-            'final_amount' => $finalAmount,
+            'discount' => number_format($discount, 0, ',', '.') . ' đ',
+            'final_amount' => number_format($finalAmount, 0, ',', '.') . ' đ',
             'status' => $ticket->status
         ];
 
@@ -256,7 +259,7 @@ class TicketController extends Controller
                 'user' => $ticket->user->name ?? 'Unknown', // Hiển thị tên người dùng
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
-                'total_amount' => $ticket->total_amount,
+                'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
                 'status' => $ticket->status,
                 'created_at' => $ticket->created_at->format('Y-m-d H:i:s')
             ];
@@ -290,25 +293,28 @@ class TicketController extends Controller
             'ticket_code' => $ticket->code,
             'movie_name' => $ticket->showtime->movie->title,
             'showtime' => $ticket->showtime->start_time,
+            'screen' => $ticket->showtime->screen->name,
+            'cinema' => $ticket->showtime->screen->cinema->name,
+            'province' => $ticket->showtime->screen->cinema->province->name,
             'seats' => $ticket->ticketDetails->map(function ($detail) {
                 return [
                     'seat_row' => $detail->seat->row,
                     'seat_number' => $detail->seat->number,
-                    'price' => $detail->price
+                    'price' => number_format($detail->price, 0, ',', '.') . ' đ'
                 ];
             }),
             'products' => $ticket->ticketProductDetails->map(function ($productDetail) {
                 return [
                     'product_name' => optional($productDetail->product)->name,
                     'quantity' => $productDetail->quantity,
-                    'unit_price' => $productDetail->product->price,
-                    'total_price' => $productDetail->price
+                    'unit_price' => number_format($productDetail->product->price, 0, ',', '.') . ' đ',
+                    'total_price' => number_format($productDetail->price, 0, ',', '.') . ' đ'
                 ];
             }),
-            'total_amount' => $totalBeforeDiscount,
+            'total_amount' => number_format($totalBeforeDiscount, 0, ',', '.') . ' đ',
             'promo_code' => optional($ticket->promoCode)->code ?? null,
-            'discount' => $discount,
-            'final_amount' => $finalAmount,
+            'discount' => number_format($discount, 0, ',', '.') . ' đ',
+            'final_amount' => number_format($finalAmount, 0, ',', '.') . ' đ',
             'status' => $ticket->status,
             'created_at' => $ticket->created_at->format('Y-m-d H:i:s')
         ];
