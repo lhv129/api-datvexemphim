@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
 use Exception;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,25 +18,30 @@ class AuthController extends Controller
         $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh']]);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
+        try {
 
-        $rules = $this->validateLogin();
-        $alert = $this->alertLogin();
-        $validator = Validator::make($request->all(), $rules, $alert);
+            $credentials = $request->only(['email', 'password']);
 
-        if ($validator->fails()) {
-            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
+            if (! $token = auth('api')->attempt($credentials)) {
+                return $this->responseCommon(400, 'Thông tin đăng nhập chưa đúng, vui lòng kiểm tra lại', []);
+            }
+
+            $user = auth('api')->user();
+            if ($user->status === 'inactive') {
+                return $this->responseError(423, 'Tài khoản của bạn đã bị khóa.', []);
+            }
+            if ($user->email_verified_at === null) {
+                return $this->responseError(403, 'Tài khoản của bạn chưa được kích hoạt, vui lòng vào email để kích hoạt tài khoản.', []);
+            }
+
+            $refreshToken = $this->createRefreshToken();
+
+            return $this->respondWithToken($token, $refreshToken);
+        } catch (\Exception $e) {
+            return $this->responseError(500,'Lỗi xử lý.',$e->getMessage());
         }
-        $credentials = request(['email', 'password']);
-
-        if (! $token = auth('api')->attempt($credentials)) {
-            return $this->responseCommon(400, 'Thông tin đăng nhập chưa đúng, vui lòng kiểm tra lại', []);
-        }
-
-        $refreshToken = $this->createRefreshToken();
-
-        return $this->respondWithToken($token, $refreshToken);
     }
 
     public function register(Request $request)
@@ -141,23 +147,6 @@ class AuthController extends Controller
         $refreshToken = JWTAuth::getJWTProvider()->encode($data);
 
         return $refreshToken;
-    }
-
-
-    public function validateLogin()
-    {
-        return [
-            'email' => 'required|email',
-            'password' => 'required',
-        ];
-    }
-
-    public function alertLogin()
-    {
-        return [
-            'required' => 'Không được để trống thông tin :attribute.',
-            'email.email' => 'Email không đúng định dạng'
-        ];
     }
 
     public function validateRegister()
