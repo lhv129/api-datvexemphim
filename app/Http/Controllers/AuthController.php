@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -17,37 +16,34 @@ class AuthController extends Controller
         $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh']]);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
+        try {
 
-        $rules = $this->validateLogin();
-        $alert = $this->alertLogin();
-        $validator = Validator::make($request->all(), $rules, $alert);
+            $credentials = $request->only(['email', 'password']);
 
-        if ($validator->fails()) {
-            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
+            if (! $token = auth('api')->attempt($credentials)) {
+                return $this->responseCommon(400, 'Thông tin đăng nhập chưa đúng, vui lòng kiểm tra lại', []);
+            }
+
+            $user = auth('api')->user();
+            if ($user->status === 'inactive') {
+                return $this->responseError(423, 'Tài khoản của bạn đã bị khóa.', []);
+            }
+            if ($user->email_verified_at === null) {
+                return $this->responseError(403, 'Tài khoản của bạn chưa được kích hoạt, vui lòng vào email để kích hoạt tài khoản.', []);
+            }
+
+            $refreshToken = $this->createRefreshToken();
+
+            return $this->respondWithToken($token, $refreshToken);
+        } catch (\Exception $e) {
+            return $this->responseError(500, 'Lỗi xử lý.', $e->getMessage());
         }
-        $credentials = request(['email', 'password']);
-
-        if (! $token = auth('api')->attempt($credentials)) {
-            return $this->responseCommon(400, 'Thông tin đăng nhập chưa đúng, vui lòng kiểm tra lại', []);
-        }
-
-        $refreshToken = $this->createRefreshToken();
-
-        return $this->respondWithToken($token, $refreshToken);
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $rules = $this->validateRegister();
-        $alert = $this->alertRegister();
-        $validator = Validator::make($request->all(), $rules, $alert);
-
-        if ($validator->fails()) {
-            return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
-        }
-
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             // Tạo ngẫu nhiên tên ảnh 12 kí tự
@@ -142,49 +138,5 @@ class AuthController extends Controller
         $refreshToken = JWTAuth::getJWTProvider()->encode($data);
 
         return $refreshToken;
-    }
-
-
-    public function validateLogin()
-    {
-        return [
-            'email' => 'required|email',
-            'password' => 'required',
-        ];
-    }
-
-    public function alertLogin()
-    {
-        return [
-            'required' => 'Không được để trống thông tin :attribute.',
-            'email.email' => 'Email không đúng định dạng'
-        ];
-    }
-
-    public function validateRegister()
-    {
-        return [
-            'name' => 'required|unique:users,name',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|max:255',
-            'phone' => 'required|regex:/^(0)(98)[0-9]{7}$/',
-            'address' => 'required|min:6|max:255',
-            'birthday' => 'required',
-            'avatar' => 'required|mimes:jpeg,jpg,png',
-        ];
-    }
-
-    public function alertRegister()
-    {
-        return [
-            'required' => 'Không được để trống thông tin :attribute.',
-            'email.email' => 'Email không đúng định dạng',
-            'name.unique' => 'Tên của bạn đã được đặt, vui lòng chọn tên khác',
-            'email.unique' => 'Email của bạn đã được tạo, vui lòng chọn email khác',
-            'min' => ':attribute. tối thiểu ít nhất 6 kí tự',
-            'max' => ':attribute. quá dài, vui lòng nhập lại',
-            'phone.regex' => 'Sai định dạng số điện thoại, vui lòng kiểm tra lại',
-            'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
-        ];
     }
 }
