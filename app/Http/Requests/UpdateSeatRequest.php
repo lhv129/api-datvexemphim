@@ -37,7 +37,7 @@ class UpdateSeatRequest extends FormRequest
             'price' => 'required|numeric|min:0',
             'screen_id' => [
                 'required',
-                Rule::exists('screens', 'id')->whereNull('deleted_at') // ✅ Kiểm tra chỉ các screen chưa bị xóa mềm
+                Rule::exists('screens', 'id')->whereNull('deleted_at') //  Kiểm tra chỉ các screen chưa bị xóa mềm
             ],
         ];
     }

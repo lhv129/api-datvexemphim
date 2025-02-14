@@ -97,7 +97,6 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::delete('showtimes/delete/{id}', [ShowtimeController::class, 'destroy']);
 });
 
-
 // Api không cần đăng nhập
 // Api Products
 Route::get('products', [ProductController::class, 'index']);

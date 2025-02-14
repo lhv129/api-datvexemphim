@@ -29,7 +29,7 @@ class StorePromocodeRequest extends FormRequest
                     return $query->whereNull('deleted_at'); // Kiểm tra chỉ trong các bản ghi chưa bị xóa mềm
                 })
             ],
-            'description' => 'required|string|max:255', // Kiểm tra mô tả không được trống và không dài quá 255 ký tự
+            'description' => 'required|string|max:255',
             'discount_amount' => 'required|numeric|min:0', // Số tiền giảm giá phải là số và không nhỏ hơn 0
             'start_date' => 'required|date|after_or_equal:today', // Ngày bắt đầu phải là ngày hôm nay hoặc sau
             'end_date' => 'required|date|after:start_date', // Ngày kết thúc phải sau ngày bắt đầu
