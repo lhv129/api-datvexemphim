@@ -16,17 +16,51 @@ class SeatController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
     }
 
-    public function store(StoreSeatRequest $request) {
-        try {
-            $seat = Seat::create($request->validated());
+    // public function store(StoreSeatRequest $request) {
+    //     try {
+    //         $seat = Seat::create($request->validated());
 
-            return $this->responseCommon(201, "Thêm mới thành công.", $seat);
+    //         return $this->responseCommon(201, "Thêm mới thành công.", $seat);
+    //     } catch (\Exception $e) {
+    //         return $this->responseError(500, "Lỗi xử lý.", [
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+    // }
+    public function store(StoreSeatRequest $request)
+    {
+        try {
+            $screen_id = $request->input('screen_id');
+            $row = strtoupper($request->input('row')); // Chuyển hàng thành chữ in hoa
+            $seat_count = $request->input('number'); // Số ghế cần tạo
+            $type = $request->input('type', 'Ghế Thường'); // Mặc định là Ghế Thường
+            $price = $request->input('price'); // Mặc định 50,000 VND
+            $status = $request->input('status');
+
+            $seats = [];
+            for ($i = 1; $i <= $seat_count; $i++) {
+                $seats[] = [
+                    'screen_id' => $screen_id,
+                    'row' => $row,
+                    'number' => str_pad($i, 2, '0', STR_PAD_LEFT), // Định dạng 01, 02, 03...
+                    'type' => $type,
+                    'price' => $price,
+                    'status' => $status,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            Seat::insert($seats); // Dùng insert() để tối ưu hiệu suất khi thêm nhiều dòng
+
+            return $this->responseCommon(201, "Thêm $seat_count ghế thành công.", $seats);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", [
                 'error' => $e->getMessage()
             ]);
         }
     }
+
 
     public function update(UpdateSeatRequest $request, $id) {
         try {

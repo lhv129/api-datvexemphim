@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up()
     {
         Schema::table('showtimes', function (Blueprint $table) {
-            // Xóa cột price và status 
+            // Xóa cột price và status
             $table->dropColumn(['price', 'status']);
 
             // Thêm cột date mới
