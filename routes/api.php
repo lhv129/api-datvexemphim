@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
@@ -32,6 +33,7 @@ Route::group([
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('profile', [AuthController::class, 'profile']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 
 // Các route chỉ dành cho addmin
@@ -64,6 +66,10 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
 
 
 // Api không cần đăng nhập
+
+// Api Forgot Password
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+
 // Api Products
 Route::get('products', [ProductController::class, 'index']);
 
