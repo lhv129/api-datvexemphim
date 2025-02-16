@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Models\User;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Str;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Requests\LoginRequest;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResetPasswordRequest;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -94,6 +97,30 @@ class AuthController extends Controller
 
         return $this->responseCommon(200, 'Đăng xuất thành công', []);
     }
+
+    public function resetPassword(ResetPasswordRequest $request)
+    {
+        $user = auth('api')->user();
+        $password = $request->password;
+        if (Hash::check($password, $user->password)) {
+            // Mật khẩu khớp
+            // Mật khẩu mới không được giống mật khẩu đặt gần đây nhất
+            if (Hash::check($request->confirm_password, $user->password)) {
+                return $this->responseCommon(422, 'Mật khẩu mới phải khác mật khẩu cũ, vui lòng chọn mật khẩu khác', []);
+            }
+            // Nếu không thì cập nhật
+            $user = User::where('id', $user->id)
+                ->update([
+                    "password" => bcrypt($request->confirm_password)
+                ]);
+            return $this->responseCommon(200, "Thay đổi mật khẩu thành công.", auth('api')->user());
+        } else {
+            // Mật khẩu không khớp
+            return $this->responseCommon(401, 'Mật khẩu không chính xác.', []);
+        }
+    }
+
+    
     public function refresh()
     {
         $refreshToken = request()->refresh_token;
