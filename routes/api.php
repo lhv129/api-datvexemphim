@@ -2,12 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
-<<<<<<< HEAD
-use App\Http\Controllers\ForgotPasswordController;
-=======
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
->>>>>>> f404540375dd5685ae853ffc28a3fb40309bbe63
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
@@ -115,9 +111,6 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
 });
 
 // Api không cần đăng nhập
-
-// Api Forgot Password
-Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 
 // Api Products
 Route::get('products', [ProductController::class, 'index']);
