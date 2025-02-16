@@ -120,6 +120,7 @@ class AuthController extends Controller
         }
     }
 
+    
     public function refresh()
     {
         $refreshToken = request()->refresh_token;
