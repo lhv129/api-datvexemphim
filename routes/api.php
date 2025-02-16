@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
-use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
