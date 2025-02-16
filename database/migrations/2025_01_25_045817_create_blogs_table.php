@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cinemas', function (Blueprint $table) {
+        Schema::create('blogs', function (Blueprint $table) {
             $table->id();
 
-            $table->unique(['code', 'province_id']);
-            $table->unique(['name', 'province_id']);
-            $table->string('address');
-            $table->string('image', 255);
-            $table->string('contact', 50);
+            $table->unsignedBigInteger('user_id');
+            $table->string('title', 255);
+            $table->text('content');
+            $table->text('description')->nullable();
+            $table->string('image', 255)->nullable();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 
             $table->softDeletes();
             $table->timestamps();
@@ -30,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cinemas');
+        Schema::dropIfExists('blogs');
     }
 };

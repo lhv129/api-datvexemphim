@@ -2,84 +2,56 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProvinceRequest;
+use App\Http\Requests\UpdateProvinceRequest;
 use App\Models\Province;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ProvinceController extends Controller
 {
     public function index() {
-        $provinces = Province::select('id','name')->get();
-        return $this->responseCommon(200,'Lấy Danh Sách Thành Công!',$provinces);
+        $provinces = Province::select('id', 'name')->get();
+        return $this->responseCommon(200, 'Lấy danh sách thành công!', $provinces);
     }
 
-    public function store(Request $request) {
-        $rules = $this->validateCreateProvince();
-        $alert = $this->alertCreateProvince();
-        $validator = Validator::make($request->all(),$rules,$alert);
-        if($validator->fails()) {
-            return $this->responseError(422,'Dữ Liệu Không hợp lệ',$validator->errors());
-        } else {
-            $province = Province::create([
-                'name' => $request->name,
-            ]);
-            return $this->responseCommon(201,"Thêm thành công.",$province);
+    public function store(StoreProvinceRequest $request) {
+        try {
+            $province = Province::create($request->validated());
+            return $this->responseCommon(201, "Thêm thành công.", $province);
+        } catch (\Exception $e) {
+            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
 
-    public function update(Request $request,$id) {
-        try{
-            $province = Province::findOrFail($id);
-            $rules = $this->validateUpdateProvince($id);
-            $alert = $this->alertUpdateProvince();
-            $validator = Validator::make($request->all(),$rules,$alert);
-            if($validator->fails()) {
-                return $this->responseError(422,'Dữ Liệu không hợp lệ', $validator->errors());
+    public function update(UpdateProvinceRequest $request, $id) {
+        try {
+            // Kiểm tra ID có tồn tại không (tránh lỗi `findOrFail`)
+            $province = Province::where('id', $id)->whereNull('deleted_at')->first();
 
-            } else {
-                $province->update([
-                    'name' => $request->name,
-                ]);
-                return $this->responseCommon(200,"Cập Nhật thành công.",$province);
+            if (!$province) {
+                return $this->responseCommon(404, "Tỉnh không tồn tại hoặc đã bị xóa.",[]);
             }
+
+            $province->update($request->validated());
+            return $this->responseCommon(200, "Cập nhật thành công.", $province);
         } catch (\Exception $e) {
-            return $this->responseCommon(404,"Tỉnh Không tồn tại hoặc đã bị xóa.",[]);
+            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
 
     public function destroy($id) {
         try {
-            $province = Province::findOrFail($id);
+            // Kiểm tra ID có tồn tại không
+            $province = Province::where('id', $id)->whereNull('deleted_at')->first();
+
+            if (!$province) {
+                return $this->responseCommon(404, "Tỉnh không tồn tại hoặc đã bị xóa.",[]);
+            }
+
             $province->delete();
-            return $this->responseCommon(200,"Xóa Thành công.",[]);
+            return $this->responseCommon(200, "Xóa thành công.",[]);
         } catch (\Exception $e) {
-            return $this->responseCommon(404,"Tỉnh Không tồn tại hoặc đã bị xóa.",[]);
-
+            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
-    }
-
-    //Validate
-
-    public function validateCreateProvince(){
-        return [
-            'name' => 'required|unique:provinces,name',
-        ];
-    }
-    public function alertCreateProvince(){
-        return [
-            'required' => 'không được để trống',
-            'unique' => 'tên bị trùng',
-        ];
-    }
-    public function validateUpdateProvince($id){
-        return [
-            'name' => 'required|unique:provinces,name'.$id,
-        ];
-    }
-    public function alertUpdateProvince(){
-        return [
-            'required' => 'không được để trống',
-            'unique' => 'tên bị trùng',
-        ];
     }
 }
