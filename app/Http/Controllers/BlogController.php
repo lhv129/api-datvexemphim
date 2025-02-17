@@ -38,7 +38,7 @@ class BlogController extends Controller
 
                 $file->move($imageDirectory, $imageName);
 
-                $path_image = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                $path_image = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
 
                 $blogData['image'] = $path_image;
                 $blogData['fileName'] = $imageName;
@@ -75,7 +75,7 @@ class BlogController extends Controller
                     // Tạo tên ảnh mới
                     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
                     $file->move($imageDirectory, $imageName);
-                    $path_image = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                    $path_image = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
                 } else {
                     $path_image = $blog->image;
                 }

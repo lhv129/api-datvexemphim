@@ -9,7 +9,6 @@ use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
@@ -55,7 +54,7 @@ class AuthController extends Controller
             $imageDirectory = 'images/users/avatars/';
 
             $file->move($imageDirectory, $imageName);
-            $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
         }
 
         $user = User::create([
