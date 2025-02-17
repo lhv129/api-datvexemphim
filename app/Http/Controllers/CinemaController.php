@@ -25,8 +25,11 @@ class CinemaController extends Controller
             if ($request->hasFile('image')) {
                 $file = $request->file('image');
                 $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-                $imagePath = $file->storeAs('public/images/cinemas', $imageName);
-                $data['image'] = url(Storage::url($imagePath));
+                $imageDirectory = 'storage/images/cinemas/';
+
+                $file->storeAs('public/images/cinemas', $imageName);
+
+                $data['image'] = 'http://filmgo.io.vn/' . $imageDirectory . $imageName;
             }
 
             $cinema = Cinema::create($data);

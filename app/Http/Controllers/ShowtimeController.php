@@ -26,7 +26,6 @@ class ShowtimeController extends Controller
 
     public function update(UpdateShowtimeRequest $request, $id) {
         try {
-            // Kiểm tra sự tồn tại của bản ghi (bao gồm cả trường hợp đã bị xóa mềm)
             $showtime = Showtime::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$showtime) {
