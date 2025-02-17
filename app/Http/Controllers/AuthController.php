@@ -9,6 +9,7 @@ use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
+use App\Models\Role;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
@@ -84,9 +85,12 @@ class AuthController extends Controller
     public function profile()
     {
         try {
-            return $this->responseCommon(200, 'Tìm thấy thông tin user', auth('api')->user());
+            $user = User::select('users.id','role_id','roles.name as role_name','email','phone','address','birthday','avatar','fileName','status')
+                ->join('roles', 'roles.id', 'roles.id')
+                ->find(auth('api')->user()->id);
+            return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
         } catch (\Exception $e) {
-            return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
+            return $this->responseError(500, 'Token không hợp lệ', $e);
         }
     }
 
@@ -119,7 +123,7 @@ class AuthController extends Controller
         }
     }
 
-    
+
     public function refresh()
     {
         $refreshToken = request()->refresh_token;
