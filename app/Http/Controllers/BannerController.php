@@ -28,7 +28,7 @@ class BannerController extends Controller
             $imageDirectory = 'images/banners/';
 
             $file->move($imageDirectory, $imageName);
-            $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
 
             $banner = Banner::create([
                 'name' => $request->name,
@@ -55,7 +55,7 @@ class BannerController extends Controller
 
                 $file->move($imageDirectory, $imageName);
 
-                $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
             } else {
                 $path_image = $banner->image;
             }

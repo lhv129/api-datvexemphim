@@ -31,7 +31,7 @@ class ProductController extends Controller
 
             $file->move($imageDirectory, $imageName);
 
-            $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
 
             $product['image'] = $path_image;
             $product['fileName'] = $imageName;
@@ -66,7 +66,7 @@ class ProductController extends Controller
 
                     $file->move($imageDirectory, $imageName);
 
-                    $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                    $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
                 } else {
                     $path_image = $product->image;
                 }

@@ -55,7 +55,7 @@ class MovieController extends Controller
                 $imageDirectory = 'images/movies/';
 
                 $file->move($imageDirectory, $imageName);
-                $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
 
                 $movie = Movie::create([
                     'title' => $request->title,
@@ -105,7 +105,7 @@ class MovieController extends Controller
 
                 $file->move($imageDirectory, $imageName);
 
-                $path_image   = 'http://127.0.0.1:8000/' . ($imageDirectory . $imageName);
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
             } else {
                 $path_image = $movie->poster;
             }
