@@ -14,6 +14,7 @@ use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -115,6 +116,13 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     //Api ticket
     Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
     Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
+
+    //Api Users
+    Route::get('users', [UserController::class, 'index']);
+    Route::post('users/create', [UserController::class, 'store']);
+    Route::put('users/update/{id}', [UserController::class, 'update']);
+    Route::get('users/show/{id}', [UserController::class, 'show']);
+    Route::delete('users/delete/{id}', [UserController::class, 'destroy']);
 });
 
 // Api không cần đăng nhập

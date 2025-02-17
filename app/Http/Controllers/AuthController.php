@@ -9,7 +9,6 @@ use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
