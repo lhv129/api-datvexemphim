@@ -117,12 +117,19 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
     Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
 
-    //Api Users
+    //Api users
     Route::get('users', [UserController::class, 'index']);
     Route::post('users/create', [UserController::class, 'store']);
     Route::put('users/update/{id}', [UserController::class, 'update']);
     Route::get('users/show/{id}', [UserController::class, 'show']);
     Route::delete('users/delete/{id}', [UserController::class, 'destroy']);
+
+    //Api genres
+    Route::get('genres', [GenreController::class, 'index']);
+    Route::post('genres/create', [GenreController::class, 'store']);
+    Route::put('genres/update/{id}', [GenreController::class, 'update']);
+    Route::get('genres/show/{id}', [GenreController::class, 'show']);
+    Route::delete('genres/delete/{id}', [GenreController::class, 'destroy']);
 });
 
 // Api không cần đăng nhập
@@ -160,6 +167,7 @@ Route::get('showtimes', [ShowtimeController::class, 'index']);
 // Api blogs
 Route::get('blogs', [BlogController::class, 'index']);
 
+//Api roles
 Route::get('roles',[RoleController::class,'index']);
 
 // Các route liên quan đến vé (cần đăng nhập)
