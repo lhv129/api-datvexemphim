@@ -9,6 +9,7 @@ use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\ProvinceController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
@@ -56,6 +57,12 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('movies/update/{id}', [MovieController::class, 'update']);
     Route::get('movies/show/{id}', [MovieController::class, 'show']);
     Route::delete('movies/delete/{id}', [MovieController::class, 'destroy']);
+
+    //Api Roles
+    Route::post('roles/create', [RoleController::class, 'store']);
+    Route::put('roles/update/{id}', [RoleController::class, 'update']);
+    Route::get('roles/show/{id}', [RoleController::class, 'show']);
+    Route::delete('roles/delete/{id}', [RoleController::class, 'destroy']);
 
     // Api Banners
     Route::post('banners/create', [BannerController::class, 'store']);
@@ -144,6 +151,8 @@ Route::get('showtimes', [ShowtimeController::class, 'index']);
 
 // Api blogs
 Route::get('blogs', [BlogController::class, 'index']);
+
+Route::get('roles',[RoleController::class,'index']);
 
 // Các route liên quan đến vé (cần đăng nhập)
 Route::middleware(['auth:api'])->group(function () {
