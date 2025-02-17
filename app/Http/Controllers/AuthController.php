@@ -32,9 +32,9 @@ class AuthController extends Controller
             if ($user->status === 'inactive') {
                 return $this->responseError(423, 'Tài khoản của bạn đã bị khóa.', []);
             }
-            if ($user->email_verified_at === null) {
-                return $this->responseError(403, 'Tài khoản của bạn chưa được kích hoạt, vui lòng vào email để kích hoạt tài khoản.', []);
-            }
+            // if ($user->email_verified_at === null) {
+            //     return $this->responseError(403, 'Tài khoản của bạn chưa được kích hoạt, vui lòng vào email để kích hoạt tài khoản.', []);
+            // }
 
             $refreshToken = $this->createRefreshToken();
 
