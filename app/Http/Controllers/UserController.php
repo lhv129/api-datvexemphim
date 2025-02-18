@@ -84,4 +84,18 @@ class UserController extends Controller
             return $this->responseError(404, "Người dùng này không tồn tại hoặc đã bị xóa.", $e->getMessage());
         }
     }
+
+    public function destroy($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            // Đường dẫn ảnh
+            $imageDirectory = 'images/users/avatars/';
+            // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
+            File::delete($imageDirectory . $user->fileName);
+            return $this->responseCommon(200, "Xóa người dùng thành công.", []);
+        } catch (\Exception $e) {
+            return $this->responseCommon(404, "Người dùng này không tồn tại hoặc đã bị xóa.", []);
+        }
+    }
 }
