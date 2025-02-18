@@ -30,6 +30,7 @@ class StoreMovieRequest extends FormRequest
             'rating' => 'required',
             'release_date' => 'required',
             'genres' => 'required|array ',
+            'actors' => 'required|array ',
         ];
     }
 
@@ -44,6 +45,7 @@ class StoreMovieRequest extends FormRequest
             'description.max' => 'Mô tả phim quá dài.',
             'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
             'genres.array' => 'Thể loại phim phải là 1 mảng array',
+            'actors.array' => 'Diễn viên phim phải là 1 mảng array',
         ];
     }
 }

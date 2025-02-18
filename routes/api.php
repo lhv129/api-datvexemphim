@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActorController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\BlogController;
@@ -133,6 +134,13 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     Route::put('genres/update/{id}', [GenreController::class, 'update']);
     Route::get('genres/show/{id}', [GenreController::class, 'show']);
     Route::delete('genres/delete/{id}', [GenreController::class, 'destroy']);
+
+    //Api actors
+    Route::get('actors', [ActorController::class, 'index']);
+    Route::post('actors/create', [ActorController::class, 'store']);
+    Route::put('actors/update/{id}', [ActorController::class, 'update']);
+    Route::get('actors/show/{id}', [ActorController::class, 'show']);
+    Route::delete('actors/delete/{id}', [ActorController::class, 'destroy']);
 });
 
 // Api không cần đăng nhập

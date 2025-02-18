@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
+use App\Models\Actor;
+use App\Models\Actor_movie;
+use App\Models\Movie_actor;
 use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\Movie_genre;
@@ -17,12 +20,16 @@ class MovieController extends Controller
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date')
             ->get();
 
-        $movie_genres = $movies->map(function ($movie) {
+        $dataMovie = $movies->map(function ($movie) {
             return [
                 'id' => $movie->id,
                 'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
                     ->join('genres', 'genres.id', 'movie_genres.genre_id')
                     ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
                     ->get(),
                 'title' => $movie->title,
                 'description' => $movie->description,
@@ -34,7 +41,7 @@ class MovieController extends Controller
                 'release_date' => $movie->release_date,
             ];
         });
-        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $movie_genres);
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
     }
 
     public function store(StoreMovieRequest $request)
@@ -46,6 +53,10 @@ class MovieController extends Controller
             $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
             if (!$genresExist) {
                 return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
+            }
+            $actorsExist = Actor::whereIn('id', $request->actors)->count() == count($request->actors);
+            if (!$actorsExist) {
+                return $this->responseCommon(400, "Một hoặc nhiều diễn viên không tồn tại.", []);
             }
             if ($request->hasFile('poster')) {
                 $file = $request->file('poster');
@@ -68,6 +79,7 @@ class MovieController extends Controller
                     'release_date' => $request->release_date,
                 ]);
                 $movie['genres'] = $request->genres;
+                $movie['actors'] = $request->actors;
 
                 // Khi thêm phim thì cũng phải thêm thể loại cho phim đó.
                 // Lấy ra id của phim vừa thêm (mới nhất)
@@ -76,6 +88,15 @@ class MovieController extends Controller
                     Movie_genre::create([
                         'movie_id' => $latestIdMovie,
                         'genre_id' => $genre
+                    ]);
+                }
+                // Khi thêm phim thì cũng phải thêm diễn viên cho phim đó.
+                // Lấy ra id của phim vừa thêm (mới nhất)
+                $latestIdMovie = Movie::orderBy('id', 'desc')->first()->id;
+                foreach ($request->actors as $actor) {
+                    Actor_movie::create([
+                        'movie_id' => $latestIdMovie,
+                        'actor_id' => $actor
                     ]);
                 }
 
@@ -93,6 +114,10 @@ class MovieController extends Controller
             $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
             if (!$genresExist) {
                 return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
+            }
+            $actorsExist = Actor::whereIn('id', $request->actors)->count() == count($request->actors);
+            if (!$actorsExist) {
+                return $this->responseCommon(400, "Một hoặc nhiều diễn viên không tồn tại.", []);
             }
             if ($request->hasFile('poster')) {
                 $file = $request->file('poster');
@@ -120,7 +145,8 @@ class MovieController extends Controller
                 'release_date' => $request->release_date,
             ]);
             $movie['genres'] = $request->genres;
-            //Xóa toàn bộ thể loại phim và thêm lại thể loại cho phim đó dựa theo update
+            $movie['actors'] = $request->actors;
+            //Xóa toàn bộ thể loại phim cũ và thêm lại thể loại cho phim đó dựa theo update
             Movie_genre::where('movie_id', $id)->delete();
             foreach ($request->genres as $genre) {
                 Movie_genre::create([
@@ -128,7 +154,14 @@ class MovieController extends Controller
                     'genre_id' => $genre
                 ]);
             }
-
+            //Xóa toàn bộ diễn viên phim cũ và thêm lại diễn viên cho phim đó dựa theo update
+            Actor::where('movie_id', $id)->delete();
+            foreach ($request->actors as $actor) {
+                Actor_movie::create([
+                    'movie_id' => $id,
+                    'actor_id' => $actor
+                ]);
+            }
             return $this->responseCommon(200, "Cập nhật phim thành công.", $movie);
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
@@ -169,5 +202,4 @@ class MovieController extends Controller
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
         }
     }
-
 }

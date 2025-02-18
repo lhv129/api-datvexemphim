@@ -15,7 +15,7 @@ class UserController extends Controller
         $users = User::select('users.id', 'role_id', 'roles.name as role_name', 'users.name', 'email', 'email_verified_at', 'phone', 'address', 'birthday', 'avatar', 'status', 'fileName')
             ->join('roles', 'roles.id', 'users.role_id')
             ->get();
-        return $this->responseCommon(200, 'Lấy danh sách user thành công', $users);
+        return $this->responseCommon(200, 'Lấy danh sách users thành công', $users);
     }
 
     public function store(CreateUserRequest $request)
