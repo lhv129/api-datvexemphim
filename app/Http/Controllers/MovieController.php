@@ -155,7 +155,7 @@ class MovieController extends Controller
                 ]);
             }
             //Xóa toàn bộ diễn viên phim cũ và thêm lại diễn viên cho phim đó dựa theo update
-            Actor::where('movie_id', $id)->delete();
+            Actor_movie::where('movie_id', $id)->delete();
             foreach ($request->actors as $actor) {
                 Actor_movie::create([
                     'movie_id' => $id,
