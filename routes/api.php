@@ -15,6 +15,7 @@ use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,6 +43,8 @@ Route::group([
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('profile', [AuthController::class, 'profile']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('verify-email/{token}',[AuthController::class,'verifyEmail'])->name('verify-email');
+
 });
 
 // Các route chỉ dành cho addmin
