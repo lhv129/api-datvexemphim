@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
+use App\Mail\VerifyEmail;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\ResetPasswordRequest;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use App\Http\Requests\ResetPasswordRequest;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh','verifyEmail']]);
     }
 
     public function login(LoginRequest $request)
@@ -67,26 +70,52 @@ class AuthController extends Controller
             'birthday' => $request->birthday,
             'avatar' => $path_image,
             'fileName' => $imageName,
+            'verification_token' => Str::random(40)
         ]);
-        $token = auth('api')->login($user);
-        $refreshToken = $this->createRefreshToken();
-
+        $data = [
+            'title' => 'Xác thực Email',
+            'name' => $user->name,
+            'token' => $user->verification_token
+        ];
+        Mail::to($request->email)->send(new VerifyEmail($data));
         // Trả về access_token và thông tin user khi đăng ký thành công
-        return $this->responseCommon(201, "Đăng ký thành công", [
-            'access_token' => $token,
-            'refresh_token' => $refreshToken,
-            'token_type' => 'bearer',
-            'expires_in' => config('jwt.ttl') * 60,
-            'user' => $user,
-        ]);
+        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
+    }
+
+
+    public function verifyEmail($token)
+    {
+        $user = User::where('verification_token', $token)->first();
+        if ($user) {
+            $user->email_verified_at = now();
+            $user->status = 'active';
+            $user->verification_token = null;
+            $user->save();
+
+            $accessToken = auth('api')->login($user);
+            $refreshToken = $this->createRefreshToken();
+
+            return $this->responseCommon(201, "Kích hoạt tài khoản thành công", [
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
+                'token_type' => 'bearer',
+                'expires_in' => config('jwt.ttl') * 60,
+                'user' => $user,
+            ]);
+        } else {
+            return $this->responseError(404, "Token không hợp lệ hoặc đã hết hạn.",[]);
+        }
     }
 
     public function profile()
     {
         try {
-            return $this->responseCommon(200, 'Tìm thấy thông tin user', auth('api')->user());
+            $user = User::select('users.id', 'role_id', 'roles.name as role_name', 'email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
+                ->join('roles', 'roles.id', 'roles.id')
+                ->find(auth('api')->user()->id);
+            return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
         } catch (\Exception $e) {
-            return $this->responseError(500, 'Refresh Token không hợp lệ', $e);
+            return $this->responseError(500, 'Token không hợp lệ', $e);
         }
     }
 
@@ -119,7 +148,7 @@ class AuthController extends Controller
         }
     }
 
-    
+
     public function refresh()
     {
         $refreshToken = request()->refresh_token;
