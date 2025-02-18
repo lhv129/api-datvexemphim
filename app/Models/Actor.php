@@ -17,4 +17,9 @@ class Actor extends Model
         'deleted_at',
         'fileName',
     ];
+
+    public function actors()
+    {
+        return $this->belongsToMany(Actor::class);
+    }
 }

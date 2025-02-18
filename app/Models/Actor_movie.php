@@ -10,9 +10,8 @@ class Actor_movie extends Model
     use HasFactory;
     // use SoftDeletes;
     // protected $dates = ['deleted_at'];
-
     protected $fillable = [
         'movie_id',
-        'genre_id'
+        'actor_id'
     ];
 }

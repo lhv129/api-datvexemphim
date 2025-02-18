@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
 use App\Models\Actor;
 use App\Models\Actor_movie;
+use App\Models\Movie_actor;
 use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\Movie_genre;
@@ -19,12 +20,16 @@ class MovieController extends Controller
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date')
             ->get();
 
-        $movie_genres = $movies->map(function ($movie) {
+        $dataMovie = $movies->map(function ($movie) {
             return [
                 'id' => $movie->id,
                 'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
                     ->join('genres', 'genres.id', 'movie_genres.genre_id')
                     ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
                     ->get(),
                 'title' => $movie->title,
                 'description' => $movie->description,
@@ -36,7 +41,7 @@ class MovieController extends Controller
                 'release_date' => $movie->release_date,
             ];
         });
-        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $movie_genres);
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
     }
 
     public function store(StoreMovieRequest $request)
@@ -197,5 +202,4 @@ class MovieController extends Controller
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
         }
     }
-
 }
