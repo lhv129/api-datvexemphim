@@ -93,6 +93,8 @@ class UserController extends Controller
             $imageDirectory = 'images/users/avatars/';
             // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
             File::delete($imageDirectory . $user->fileName);
+
+            $user->delete();
             return $this->responseCommon(200, "Xóa người dùng thành công.", []);
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Người dùng này không tồn tại hoặc đã bị xóa.", []);
