@@ -11,6 +11,7 @@ use App\Models\Ticket;
 use App\Models\TicketDetail;
 use App\Models\TicketProductDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -54,9 +55,21 @@ class TicketController extends Controller
             return $this->responseError(400, 'Suất chiếu đã kết thúc, không thể đặt vé.');
         }
 
-        $seats = Seat::whereIn('id', $request->seat_ids)->where('status', 'available')->get();
+        // kiểm tra ghế bị trùng trong suất chiếu
+        $reservedSeats = DB::table('ticket_details')
+            ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+            ->where('tickets.showtime_id', $request->showtime_id)
+            ->whereIn('ticket_details.seat_id', $request->seat_ids)
+            ->pluck('ticket_details.seat_id')
+            ->toArray();
+
+        if (!empty($reservedSeats)) {
+            return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
+        }
+
+         $seats = Seat::whereIn('id', $request->seat_ids)->get();
         if ($seats->count() != count($request->seat_ids)) {
-            return $this->responseError(400, 'Một số ghế đã được đặt trước đó.');
+            return $this->responseError(400, 'Một số ghế không hợp lệ.');
         }
 
         $seatPrices = $seats->sum('price');
@@ -80,7 +93,7 @@ class TicketController extends Controller
         ]);
 
         $this->saveTicketDetails($ticket, $seats, $request->products);
-        Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
+        // Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
 
         if (in_array($request->payment_method_id, [1, 2])) {
             $ticket->update(['status' => 'paid']);
