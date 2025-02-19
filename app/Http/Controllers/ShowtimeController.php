@@ -5,6 +5,7 @@ use App\Http\Requests\StoreShowtimeRequest;
 use App\Http\Requests\UpdateShowtimeRequest;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ShowtimeController extends Controller
 {
@@ -17,12 +18,39 @@ class ShowtimeController extends Controller
 
     public function store(StoreShowtimeRequest $request) {
         try {
-            $showtime = Showtime::create($request->validated());
-            return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+            $validatedData = $request->validated();
+            $showtimes = [];
+
+            foreach ($validatedData['showtimes'] as $showtimeData) {
+                // Kiểm tra trùng start_time với suất chiếu đã có trong cùng screen_id
+                $exists = Showtime::where('screen_id', $showtimeData['screen_id'])
+                    ->where('start_time', '<=', $showtimeData['start_time'])
+                    ->where('end_time', '>=', $showtimeData['start_time'])
+                    ->exists();
+
+                if ($exists) {
+                    return response()->json([
+                        'status' => 400,
+                        'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+                        'data' => $showtimeData
+                    ], 400);
+                }
+
+                $showtimes[] = Showtime::create($showtimeData);
+            }
+
+            return $this->responseCommon(201, "Thêm mới thành công.", $showtimes);
         } catch (\Exception $e) {
+            Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
+
+
+
+
+
+
 
     public function update(UpdateShowtimeRequest $request, $id) {
         try {
