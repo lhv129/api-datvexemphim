@@ -95,9 +95,14 @@ class TicketController extends Controller
         $this->saveTicketDetails($ticket, $seats, $request->products);
         // Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
 
-        if (in_array($request->payment_method_id, [1, 2])) {
-            $ticket->update(['status' => 'paid']);
+        if ($request->payment_method_id == '1') {
+            $paymentController = new PaymentMethodController();
+            return $paymentController->createPayment(new Request(['ticket_id' => $ticket->id]));
         }
+
+        // if (in_array($request->payment_method_id, [1, 2])) {
+        //     $ticket->update(['status' => 'paid']);
+        // }
 
         return $this->responseCommon(200, 'Tạo vé thành công.', $ticket);
     }
