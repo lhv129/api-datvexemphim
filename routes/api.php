@@ -7,6 +7,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\ProvinceController;
@@ -180,6 +181,10 @@ Route::get('blogs', [BlogController::class, 'index']);
 
 //Api roles
 Route::get('roles',[RoleController::class,'index']);
+
+//thanh toán
+Route::post('tickets/payment/vnpay', [PaymentMethodController::class, 'createPayment']);
+Route::get('tickets/payment/vnpay/callback', [PaymentMethodController::class, 'vnpayCallback']);
 
 // Các route liên quan đến vé (cần đăng nhập)
 Route::middleware(['auth:api'])->group(function () {

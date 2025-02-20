@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTicketRequest;
 use App\Models\Product;
 use App\Models\Promo_code;
 use App\Models\Seat;
@@ -10,6 +11,7 @@ use App\Models\Ticket;
 use App\Models\TicketDetail;
 use App\Models\TicketProductDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -40,17 +42,9 @@ class TicketController extends Controller
         return $this->responseCommon(200, 'Lấy danh sách vé thành công.', $data);
     }
 
-    public function store(Request $request)
+    public function store(StoreTicketRequest $request)
     {
         $user = JWTAuth::user();
-
-        $rules = $this->validateCreateTicket();
-        $alert = $this->alertCreateTicket();
-        $validator = Validator::make($request->all(), $rules, $alert);
-
-        if ($validator->fails()) {
-            return $this->responseError(422, 'Dữ liệu không hợp lệ', $validator->errors());
-        }
 
         // Kiểm tra suất chiếu hết hạn chưa
         $showtime = Showtime::find($request->showtime_id);
@@ -61,9 +55,21 @@ class TicketController extends Controller
             return $this->responseError(400, 'Suất chiếu đã kết thúc, không thể đặt vé.');
         }
 
-        $seats = Seat::whereIn('id', $request->seat_ids)->where('status', 'available')->get();
+        // kiểm tra ghế bị trùng trong suất chiếu
+        $reservedSeats = DB::table('ticket_details')
+            ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+            ->where('tickets.showtime_id', $request->showtime_id)
+            ->whereIn('ticket_details.seat_id', $request->seat_ids)
+            ->pluck('ticket_details.seat_id')
+            ->toArray();
+
+        if (!empty($reservedSeats)) {
+            return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
+        }
+
+         $seats = Seat::whereIn('id', $request->seat_ids)->get();
         if ($seats->count() != count($request->seat_ids)) {
-            return $this->responseError(400, 'Một số ghế đã được đặt trước đó.');
+            return $this->responseError(400, 'Một số ghế không hợp lệ.');
         }
 
         $seatPrices = $seats->sum('price');
@@ -87,11 +93,16 @@ class TicketController extends Controller
         ]);
 
         $this->saveTicketDetails($ticket, $seats, $request->products);
-        Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
+        // Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
 
-        if (in_array($request->payment_method_id, [1, 2])) {
-            $ticket->update(['status' => 'paid']);
+        if ($request->payment_method_id == '1') {
+            $paymentController = new PaymentMethodController();
+            return $paymentController->createPayment(new Request(['ticket_id' => $ticket->id]));
         }
+
+        // if (in_array($request->payment_method_id, [1, 2])) {
+        //     $ticket->update(['status' => 'paid']);
+        // }
 
         return $this->responseCommon(200, 'Tạo vé thành công.', $ticket);
     }
@@ -210,31 +221,6 @@ class TicketController extends Controller
                 ]);
             }
         }
-    }
-
-    private function validateCreateTicket()
-    {
-        return [
-            'showtime_id' => 'required|integer|exists:showtimes,id',
-            'seat_ids' => 'required|array',
-            'seat_ids.*' => 'integer|exists:seats,id',
-            'payment_method_id' => 'required|integer',
-            'promo_code_id' => 'nullable|integer|exists:promo_codes,id',
-            'products' => 'nullable|array',
-            'products.*.product_id' => 'integer|exists:products,id',
-            'products.*.quantity' => 'integer|min:1'
-        ];
-    }
-
-    private function alertCreateTicket()
-    {
-        return [
-            'required' => 'Không được để trống thông tin :attribute.',
-            'integer' => ':attribute phải là số nguyên.',
-            'exists' => ':attribute không tồn tại trong hệ thống.',
-            'array' => ':attribute phải là một mảng.',
-            'min' => ':attribute phải lớn hơn hoặc bằng :min.'
-        ];
     }
 
     public function responseCommon($status, $message, $data)
