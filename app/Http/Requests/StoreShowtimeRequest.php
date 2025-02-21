@@ -27,9 +27,9 @@ class StoreShowtimeRequest extends FormRequest
      */
     public function rules(): array
     {
-        Log::info('Dữ liệu request trong FormRequest:', $this->all());
+        // Log::info('Dữ liệu request trong FormRequest:', $this->all());
         return [
-            'showtimes' => 'array|min:1',
+            'showtimes' => 'required|array|min:1',
             'showtimes.*.movie_id' => [
                 'required',
                 Rule::exists('movies', 'id')->whereNull('deleted_at'),

@@ -29,7 +29,6 @@ class PromocodeController extends Controller
 
     public function update(UpdatePromocodeRequest $request, $id) {
         try {
-            // Kiểm tra mã giảm giá có tồn tại không
             $promo_code = Promo_code::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$promo_code) {
@@ -47,7 +46,6 @@ class PromocodeController extends Controller
 
     public function show($id) {
         try {
-            // Tìm mã giảm giá
             $promo_code = Promo_code::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$promo_code) {
@@ -64,14 +62,12 @@ class PromocodeController extends Controller
 
     public function destroy($id) {
         try {
-            // Kiểm tra mã giảm giá có tồn tại không
             $promo_code = Promo_code::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$promo_code) {
                 return $this->responseCommon(404, "Mã giảm giá không tồn tại hoặc đã bị xóa.", []);
             }
 
-            // Xóa mã giảm giá
             $promo_code->delete();
 
             return $this->responseCommon(200, "Xóa mã giảm giá thành công.", []);
