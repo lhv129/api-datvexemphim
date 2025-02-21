@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 class ShowtimeController extends Controller
 {
     public function index() {
-        $showtimes = Showtime::select('id', 'start_time', 'end_time', 'movie_id', 'screen_id')
+        $showtimes = Showtime::select('id', 'start_time', 'end_time', 'movie_id', 'screen_id','date')
             ->with(['screen:id,name', 'movie:id,title'])
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
@@ -69,7 +69,6 @@ class ShowtimeController extends Controller
 
     public function show($id) {
         try {
-            // Kiểm tra sự tồn tại của bản ghi (bao gồm cả trường hợp đã bị xóa mềm)
             $showtime = Showtime::with(['screen:id,name', 'movie:id,title'])
                 ->where('id', $id)->whereNull('deleted_at')->first();
 
@@ -85,14 +84,13 @@ class ShowtimeController extends Controller
 
     public function destroy($id) {
         try {
-            // Kiểm tra sự tồn tại của bản ghi (bao gồm cả trường hợp đã bị xóa mềm)
             $showtime = Showtime::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$showtime) {
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);
             }
 
-            $showtime->delete();  // Xóa mềm
+            $showtime->delete();
             return $this->responseCommon(200, "Xóa Giờ Chiếu thành công.", []);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);

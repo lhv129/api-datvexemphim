@@ -16,23 +16,11 @@ class SeatController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
     }
 
-    // public function store(StoreSeatRequest $request) {
-    //     try {
-    //         $seat = Seat::create($request->validated());
-
-    //         return $this->responseCommon(201, "Thêm mới thành công.", $seat);
-    //     } catch (\Exception $e) {
-    //         return $this->responseError(500, "Lỗi xử lý.", [
-    //             'error' => $e->getMessage()
-    //         ]);
-    //     }
-    // }
-
     public function store(StoreSeatRequest $request)
     {
         try {
             $screen_id = $request->input('screen_id');
-            $row = strtoupper($request->input('row')); // Chuyển hàng thành chữ in hoa
+            $row = strtoupper($request->input('row'));
             $seat_count = $request->input('number');
             $type = $request->input('type', 'Ghế Thường');
             $price = $request->input('price');
@@ -52,7 +40,7 @@ class SeatController extends Controller
                 ];
             }
 
-            Seat::insert($seats); // Dùng insert() để tối ưu khi thêm nhiều dòng
+            Seat::insert($seats);
 
             return $this->responseCommon(201, "Thêm $seat_count ghế thành công.", $seats);
         } catch (\Exception $e) {
