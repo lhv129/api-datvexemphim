@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TicketMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Ticket;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentMethodController extends Controller
 {
@@ -86,7 +88,12 @@ class PaymentMethodController extends Controller
         if ($ticket) {
             if ($inputData['vnp_ResponseCode'] == '00') {
                 $ticket->update(['status' => 'paid']);
+                $userEmail = $ticket->user->email ?? null;
+                if ($userEmail) {
+                    Mail::to($userEmail)->send(new TicketMail($ticket));
+                }
                 return response()->json(['message' => 'Thanh toán thành công'], 200);
+
             } else {
                 return response()->json(['message' => 'Thanh toán không thành công'], 400);
             }
