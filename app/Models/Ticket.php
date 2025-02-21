@@ -16,6 +16,7 @@ class Ticket extends Model
         'promo_code_id',
         'code',
         'total_amount',
+        'discount_price',
         'status'
     ];
 

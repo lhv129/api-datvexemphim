@@ -25,7 +25,6 @@ class ProvinceController extends Controller
 
     public function update(UpdateProvinceRequest $request, $id) {
         try {
-            // Kiểm tra ID có tồn tại không (tránh lỗi `findOrFail`)
             $province = Province::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$province) {
@@ -41,7 +40,6 @@ class ProvinceController extends Controller
 
     public function destroy($id) {
         try {
-            // Kiểm tra ID có tồn tại không
             $province = Province::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$province) {

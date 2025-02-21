@@ -26,7 +26,6 @@ class ScreenController extends Controller
 
     public function update(UpdateScreenRequest $request, $id) {
         try {
-            // Kiểm tra ID có tồn tại không (tránh lỗi `findOrFail`)
             $screen = Screen::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$screen) {
@@ -42,8 +41,13 @@ class ScreenController extends Controller
 
     public function show($id) {
         try {
-            // Kiểm tra sự tồn tại của phòng và không bị xóa mềm
-            $screen = Screen::with('cinema:id,name')->where('id', $id)->whereNull('deleted_at')->first();
+            $screen = Screen::with([
+                'cinema:id,name',
+                'seat:id,screen_id,row,number'
+            ])
+            ->where('id', $id)
+            ->whereNull('deleted_at')
+            ->first();
 
             if (!$screen) {
                 return $this->responseCommon(404, "Phòng không tồn tại hoặc đã bị xóa.", []);
@@ -57,14 +61,13 @@ class ScreenController extends Controller
 
     public function destroy($id) {
         try {
-            // Kiểm tra ID có tồn tại không
             $screen = Screen::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$screen) {
                 return $this->responseCommon(404, "Phòng không tồn tại hoặc đã bị xóa.", []);
             }
 
-            $screen->delete();  // Xóa mềm
+            $screen->delete();
             return $this->responseCommon(200, "Xóa phòng thành công.", []);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
