@@ -9,9 +9,10 @@ use Illuminate\Support\Facades\Log;
 
 class ShowtimeController extends Controller
 {
-    public function index() {
-        $showtimes = Showtime::select('id', 'start_time', 'end_time', 'movie_id', 'screen_id','date')
+    public function index(Request $request) {
+        $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
             ->with(['screen:id,name', 'movie:id,title'])
+            ->where('date' , $request->date)
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
@@ -45,12 +46,6 @@ class ShowtimeController extends Controller
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
-
-
-
-
-
-
 
     public function update(UpdateShowtimeRequest $request, $id) {
         try {
