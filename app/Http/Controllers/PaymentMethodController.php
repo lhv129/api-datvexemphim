@@ -70,36 +70,53 @@ class PaymentMethodController extends Controller
     public function vnpayCallback(Request $request)
     {
         $inputData = $request->all();
-        // $secureHash = env('VNP_HASH_SECRET');
-
-        $vnp_SecureHash = $inputData['vnp_SecureHash'];
-        // unset($inputData['vnp_SecureHash']);
-        // ksort($inputData);
-        // $hashData = "";
-        // foreach ($inputData as $key => $value) {
-        //     $hashData .= '&' . $key . '=' . $value;
-        // }
-        // $hashData = ltrim($hashData, '&');
-        // $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-
-        // if ($secureHash === $vnp_SecureHash) {
         $ticket = Ticket::where('code', $inputData['vnp_TxnRef'])->first();
+
         if ($ticket) {
             if ($inputData['vnp_ResponseCode'] == '00') {
                 $ticket->update(['status' => 'paid']);
-                $userEmail = $ticket->user->email ?? null;
-                if ($userEmail) {
-                    Mail::to($userEmail)->send(new TicketMail($ticket));
-                }
-                return response()->json(['message' => 'Thanh toán thành công'], 200);
 
+                // Lấy thông tin vé + ghế ngồi + suất chiếu
+                $showtime = $ticket->showtime;
+                $cinema = $showtime->screen->cinema;
+                $seats = $ticket->ticketDetails->pluck('seat.number')->toArray();
+                $seatList = implode(',', $seats);
+                $total_price = number_format($ticket->total_amount, 0, ',', '.') . 'đ';
+
+                // Lấy danh sách sản phẩm kèm số lượng và giá
+                $products = $ticket->ticketProductDetails()->with('product')->get();
+                $productList = $products->map(function ($item) {
+                    return $item->product->name . ': ' . $item->quantity . ' x ' . number_format($item->product->price, 0, ',', '.') . 'đ';
+                })->implode(', ');
+
+                // Lấy danh sách ghế kết hợp row + number
+                $seats = $ticket->ticketDetails()->with('seat')->get();
+                $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
+
+                // Tạo dữ liệu email
+                $emailData = [
+                    'ticket_code' => $ticket->code,
+                    'movie_name' => $showtime->movie->title,
+                    'cinema_name' => $cinema->name,
+                    'screen_name' => $showtime->screen->name,
+                    'show_time' => \Carbon\Carbon::parse($showtime->start_time)->format('d/m/Y H:i'),
+                    'seats' => $seatList,
+                    'price' => count($seats) . ' x ' . number_format($ticket->ticketDetails->first()->price, 0, ',', '.') . 'đ',
+                    'total_amount' => $total_price,
+                    'user_email' => $ticket->user->email,
+                    'promotion' => number_format($ticket->discount_price, 0, ',', '.') . 'đ',
+                    'products' => $productList,
+                ];
+
+                // Gửi email
+                Mail::to($emailData['user_email'])->send(new TicketMail($emailData));
+
+                return response()->json(['message' => 'Thanh toán thành công'], 200);
             } else {
                 return response()->json(['message' => 'Thanh toán không thành công'], 400);
             }
         }
-        // }
-
         return response()->json(['message' => 'Dữ liệu không hợp lệ'], 400);
     }
+
 }
