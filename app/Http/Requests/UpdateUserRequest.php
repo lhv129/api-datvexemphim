@@ -25,7 +25,6 @@ class UpdateUserRequest extends FormRequest
             'role_id' => 'required|integer|exists:roles,id',
             'name' => 'required|unique:users,name,' . $this->id,
             'email' => 'required|email|unique:users,email,' . $this->id,
-            'password' => 'required|min:6|max:255',
             'phone' => 'required|regex:/^(0)(98)[0-9]{7}$/',
             'address' => 'required|min:6|max:255',
             'birthday' => 'required',
