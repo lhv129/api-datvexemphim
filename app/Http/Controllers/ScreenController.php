@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Screen;
+use App\Models\Cinema;
 use App\Http\Requests\StoreScreenRequest;
 use App\Http\Requests\UpdateScreenRequest;
 use Illuminate\Http\Request;
@@ -9,7 +10,7 @@ use Illuminate\Http\Request;
 class ScreenController extends Controller
 {
     public function index(Request $request) {
-        $cinema = Screen::find($request->cinema_id);
+        $cinema = Cinema::find($request->cinema_id);
         if(!$cinema) {
             return $this->responseCommon(404,"Rạp không tồn tại.",[]);
         }
