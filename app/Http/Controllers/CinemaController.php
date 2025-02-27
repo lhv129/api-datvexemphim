@@ -5,15 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCinemaRequest;
 use App\Http\Requests\UpdateCinemaRequest;
 use App\Models\Cinema;
+use App\Models\Province;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CinemaController extends Controller
 {
-    public function index() {
+    public function index(Request $request) {
+        $province = Province::find($request->province_id);
+        if(!$province) {
+            return $this->responseCommon(404,"Tỉnh chưa có rạp.",[]);
+        }
         $cinemas = Cinema::select('id', 'code', 'name', 'address', 'image', 'contact', 'province_id')
             ->with(['province:id,name'])
+            ->where('province_id',$request->province_id)
             ->get();
         return $this->responseCommon(200, "Lấy danh sách thành công", $cinemas);
     }
@@ -44,7 +50,6 @@ class CinemaController extends Controller
 
     public function update(UpdateCinemaRequest $request, $id) {
         try {
-            // Kiểm tra xem rạp có tồn tại không (tránh lỗi `findOrFail`)
             $cinema = Cinema::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$cinema) {
@@ -54,13 +59,11 @@ class CinemaController extends Controller
             $data = $request->validated();
 
             if ($request->hasFile('image')) {
-                // Xóa ảnh cũ trước khi lưu ảnh mới
                 if (!empty($cinema->image)) {
                     $oldImagePath = str_replace(url('/storage/'), 'public/', $cinema->image);
                     Storage::delete($oldImagePath);
                 }
 
-                // Lưu ảnh mới
                 $file = $request->file('image');
                 $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
                 $imagePath = $file->storeAs('public/images/cinemas', $imageName);
