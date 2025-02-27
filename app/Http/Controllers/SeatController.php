@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSeatRequest;
 use App\Http\Requests\UpdateSeatRequest;
+use App\Models\Screen;
 use App\Models\Seat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\Validator;
 class SeatController extends Controller
 {
     public function index(Request $request) {
+        $screen = Screen::find($request->screen_id);
+        if(!$screen) {
+            return $this->responseCommon(404,"Phòng không tồn tại.",[]);
+        }
         $seats = Seat::select('id', 'row','number','type','price','status','screen_id')
             ->with(['screen:id,name'])
             ->where('screen_id',$request->screen_id)
@@ -40,9 +45,7 @@ class SeatController extends Controller
                     'updated_at' => now(),
                 ];
             }
-
             Seat::insert($seats);
-
             return $this->responseCommon(201, "Thêm $seat_count ghế thành công.", $seats);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", [
