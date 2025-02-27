@@ -160,7 +160,7 @@ Route::post('cinemas', [CinemaController::class, 'index']);
 Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
 
 // Api Screens
-Route::get('screens', [ScreenController::class, 'index']);
+Route::post('screens', [ScreenController::class, 'index']);
 Route::get('screens/show/{id}', [ScreenController::class, 'show']);
 
 // Api Seats
