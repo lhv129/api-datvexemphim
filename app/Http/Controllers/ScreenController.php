@@ -8,9 +8,14 @@ use Illuminate\Http\Request;
 
 class ScreenController extends Controller
 {
-    public function index() {
+    public function index(Request $request) {
+        $cinema = Screen::find($request->cinema_id);
+        if(!$cinema) {
+            return $this->responseCommon(404,"Rạp không tồn tại.",[]);
+        }
         $screens = Screen::select('id', 'name', 'cinema_id')
             ->with(['cinema:id,name'])
+            ->where('cinema_id',$request->cinema_id)
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $screens);
     }
