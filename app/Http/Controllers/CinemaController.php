@@ -15,7 +15,7 @@ class CinemaController extends Controller
     public function index(Request $request) {
         $province = Province::find($request->province_id);
         if(!$province) {
-            return $this->responseCommon(404,"Tỉnh chưa có rạp.",[]);
+            return $this->responseCommon(404,"Tỉnh thành không tồn tại",[]);
         }
         $cinemas = Cinema::select('id', 'code', 'name', 'address', 'image', 'contact', 'province_id')
             ->with(['province:id,name'])

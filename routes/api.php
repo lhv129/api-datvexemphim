@@ -156,7 +156,7 @@ Route::get('provinces', [ProvinceController::class, 'index']);
 Route::get('provinces/show/{id}', [ProvinceController::class, 'show']);
 
 // Api Cinemas
-Route::get('cinemas', [CinemaController::class, 'index']);
+Route::post('cinemas', [CinemaController::class, 'index']);
 Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
 
 // Api Screens
