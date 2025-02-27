@@ -34,25 +34,41 @@ class SeatController extends Controller
 
             $seats = [];
             for ($i = 1; $i <= $seat_count; $i++) {
-                $seats[] = [
-                    'screen_id' => $screen_id,
-                    'row' => $row,
-                    'number' => str_pad($i, 2, '0', STR_PAD_LEFT), // Định dạng 01, 02, 03...
-                    'type' => $type,
-                    'price' => $price,
-                    'status' => $status,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                $seat_number = str_pad($i, 2, '0', STR_PAD_LEFT);
+
+                // Kiểm tra xem ghế đã tồn tại chưa
+                $existingSeat = Seat::where([
+                    ['screen_id', '=', $screen_id],
+                    ['row', '=', $row],
+                    ['number', '=', $seat_number],
+                    ['deleted_at', '=', null],
+                ])->exists();
+
+                if (!$existingSeat) {
+                    $seats[] = [
+                        'screen_id' => $screen_id,
+                        'row' => $row,
+                        'number' => $seat_number,
+                        'type' => $type,
+                        'price' => $price,
+                        'status' => $status,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
             }
-            Seat::insert($seats);
-            return $this->responseCommon(201, "Thêm $seat_count ghế thành công.", $seats);
+
+            if (!empty($seats)) {
+                Seat::insert($seats);
+                return $this->responseCommon(201, "Thêm " . count($seats) . " ghế thành công.", $seats);
+            }
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", [
                 'error' => $e->getMessage()
             ]);
         }
     }
+
 
 
     public function update(UpdateSeatRequest $request, $id) {

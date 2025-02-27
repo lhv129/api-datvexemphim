@@ -28,15 +28,15 @@ class StoreSeatRequest extends FormRequest
                 'required',
                 Rule::unique('seats')->where(function ($query) {
                     return $query->where('row', $this->row)
-                                 ->where('screen_id', $this->screen_id)
-                                 ->whereNull('deleted_at'); // Thêm để bỏ qua các bản ghi đã xóa mềm
+                                ->where('screen_id', $this->screen_id)
+                                ->whereNull('deleted_at');
                 }),
             ],
             'type' => 'required',
-            'price' => 'required|numeric|min:0', // Kiểm tra giá trị số, không âm
+            'price' => 'required|numeric|min:0',
             'screen_id' => [
                 'required',
-                Rule::exists('screens', 'id')->whereNull('deleted_at') //  Chỉ chấp nhận screen_id chưa bị xóa mềm
+                Rule::exists('screens', 'id')->whereNull('deleted_at')
             ]
         ];
     }
