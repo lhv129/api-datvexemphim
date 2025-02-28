@@ -33,6 +33,7 @@ class UpdateSeatRequest extends FormRequest
                 'required',
                 Rule::exists('screens', 'id')->whereNull('deleted_at') //  Kiểm tra chỉ các screen chưa bị xóa mềm
             ],
+            'status' => 'required',
         ];
     }
 
