@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 
 class CinemaController extends Controller
 {
-    public function index(Request $request) {
+    public function index() {
         $cinemas = Cinema::select('id', 'code', 'name', 'address', 'image', 'contact', 'province_id')
             ->with(['province:id,name'])
             ->get();

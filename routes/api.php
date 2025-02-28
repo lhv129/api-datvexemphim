@@ -162,10 +162,12 @@ Route::post('cinemas', [CinemaController::class, 'getAllByProvinceId']);
 Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
 
 // Api Screens
-Route::post('screens', [ScreenController::class, 'index']);
+Route::get('screens', [ScreenController::class, 'index']);
+Route::post('screens', [ScreenController::class, 'getAllByCinemaId']);
 Route::get('screens/show/{id}', [ScreenController::class, 'show']);
 
 // Api Seats
+Route::get('seats', [SeatController::class, 'getAllByScreenId']);
 Route::post('seats', [SeatController::class, 'index']);
 Route::get('seats/show/{id}', [SeatController::class, 'show']);
 
