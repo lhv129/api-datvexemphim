@@ -49,16 +49,18 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            // Tạo ngẫu nhiên tên ảnh 12 kí tự
-            $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/users/avatars/';
+        // if ($request->hasFile('avatar')) {
+        //     $file = $request->file('avatar');
+        //     // Tạo ngẫu nhiên tên ảnh 12 kí tự
+        //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+        //     // Đường dẫn ảnh
+        //     $imageDirectory = 'images/users/avatars/';
 
-            $file->move($imageDirectory, $imageName);
-            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-        }
+        //     $file->move($imageDirectory, $imageName);
+        //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+        // }
+        $imageName = Str::random(12);
+        $path_image = Str::random(12);
 
         $user = User::create([
             'name' => $request->name,

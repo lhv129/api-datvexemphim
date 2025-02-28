@@ -29,7 +29,7 @@ class RegisterRequest extends FormRequest
             'phone' => 'required|regex:/^(0)(98)[0-9]{7}$/',
             'address' => 'required|min:6|max:255',
             'birthday' => 'required',
-            'avatar' => 'required|mimes:jpeg,jpg,png',
+            // 'avatar' => 'required|mimes:jpeg,jpg,png',
         ];
     }
 
@@ -43,7 +43,7 @@ class RegisterRequest extends FormRequest
             'min' => ':attribute. tối thiểu ít nhất 6 kí tự.',
             'max' => ':attribute. quá dài, vui lòng nhập lại.',
             'phone.regex' => 'Sai định dạng số điện thoại, vui lòng kiểm tra lại.',
-            'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png.',
+            // 'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png.',
             'same' => 'Mật khẩu phải giống nhau,vui lòng kiểm tra lại.'
         ];
     }
