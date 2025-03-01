@@ -37,7 +37,7 @@ class SeatController extends Controller
             $seat_count = $request->input('number');
             $type = $request->input('type', 'Ghế Thường');
             $price = $request->input('price');
-            $status = $request->input('status');
+            // $status = $request->input('status');
 
             $seats = [];
             for ($i = 1; $i <= $seat_count; $i++) {
@@ -58,7 +58,7 @@ class SeatController extends Controller
                         'number' => $seat_number,
                         'type' => $type,
                         'price' => $price,
-                        'status' => $status,
+                        // 'status' => $status,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
