@@ -18,7 +18,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh','verifyEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail']]);
     }
 
     public function login(LoginRequest $request)
@@ -58,27 +58,28 @@ class AuthController extends Controller
 
             $file->move($imageDirectory, $imageName);
             $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'role_id' => 3,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'birthday' => $request->birthday,
+                'avatar' => $path_image,
+                'fileName' => $imageName,
+                'verification_token' => Str::random(40)
+            ]);
+            $data = [
+                'title' => 'Xác thực Email',
+                'name' => $user->name,
+                'token' => $user->verification_token
+            ];
+            Mail::to($request->email)->send(new VerifyEmail($data));
+            // Trả về access_token và thông tin user khi đăng ký thành công
+            return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
         }
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role_id' => 3,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'birthday' => $request->birthday,
-            'avatar' => $path_image,
-            'fileName' => $imageName,
-            'verification_token' => Str::random(40)
-        ]);
-        $data = [
-            'title' => 'Xác thực Email',
-            'name' => $user->name,
-            'token' => $user->verification_token
-        ];
-        Mail::to($request->email)->send(new VerifyEmail($data));
-        // Trả về access_token và thông tin user khi đăng ký thành công
-        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
     }
 
 
@@ -102,7 +103,7 @@ class AuthController extends Controller
                 'user' => $user,
             ]);
         } else {
-            return $this->responseError(404, "Token không hợp lệ hoặc đã hết hạn.",[]);
+            return $this->responseError(404, "Token không hợp lệ hoặc đã hết hạn.", []);
         }
     }
 
