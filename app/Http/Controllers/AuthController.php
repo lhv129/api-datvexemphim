@@ -59,7 +59,6 @@ class AuthController extends Controller
             $file->move($imageDirectory, $imageName);
             $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
         }
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
