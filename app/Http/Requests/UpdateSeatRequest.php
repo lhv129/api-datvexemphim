@@ -26,19 +26,14 @@ class UpdateSeatRequest extends FormRequest
 
         return [
             'row' => 'required',
-            'number' => [
-                'required',
-                Rule::unique('seats')->where(function ($query) {
-                    return $query->where('row', $this->row)
-                                 ->where('screen_id', $this->screen_id);
-                })->ignore($seatId), // Bỏ qua ID ghế hiện tại khi cập nhật
-            ],
+            'number' => ['required'],
             'type' => 'required',
             'price' => 'required|numeric|min:0',
             'screen_id' => [
                 'required',
                 Rule::exists('screens', 'id')->whereNull('deleted_at') //  Kiểm tra chỉ các screen chưa bị xóa mềm
             ],
+            'status' => 'required',
         ];
     }
 

@@ -55,6 +55,19 @@ class TicketController extends Controller
             return $this->responseError(400, 'Suất chiếu đã kết thúc, không thể đặt vé.');
         }
 
+        // Truy vấn danh sách ghế có trong phòng chiếu
+        $seats = Seat::whereIn('id', $request->seat_ids)
+            ->where('screen_id', $showtime->screen_id)
+            ->get();
+
+        // Kiểm tra ghế không hợp lệ
+        $validSeatIds = $seats->pluck('id')->toArray();
+        $invalidSeats = array_diff($request->seat_ids, $validSeatIds);
+
+        if (!empty($invalidSeats)) {
+            return $this->responseError(400, 'Ghế không hợp lệ hoặc không thuộc phòng chiếu: ' . implode(', ', $invalidSeats));
+        }
+
         // kiểm tra ghế bị trùng trong suất chiếu
         $reservedSeats = DB::table('ticket_details')
             ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
@@ -67,10 +80,10 @@ class TicketController extends Controller
             return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
         }
 
-         $seats = Seat::whereIn('id', $request->seat_ids)->get();
-        if ($seats->count() != count($request->seat_ids)) {
-            return $this->responseError(400, 'Một số ghế không hợp lệ.');
-        }
+        // $seats = Seat::whereIn('id', $request->seat_ids)->get();
+        // if ($seats->count() != count($request->seat_ids)) {
+        //     return $this->responseError(400, 'Một số ghế không hợp lệ.');
+        // }
 
         $seatPrices = $seats->sum('price');
         $productPrices = $this->calculateProductPrices($request->products);

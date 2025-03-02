@@ -16,7 +16,7 @@ class Promo_code extends Model
         'discount_amount',
         'start_date',
         'end_date',
-        // 'status',
+        'status',
     ];
     public $timestamps = true ;
 
