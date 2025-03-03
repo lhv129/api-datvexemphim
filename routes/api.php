@@ -121,6 +121,8 @@ Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
     //Api ticket
     Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
     Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
+    Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
+    Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
 
     //Api users
     Route::get('users', [UserController::class, 'index']);
