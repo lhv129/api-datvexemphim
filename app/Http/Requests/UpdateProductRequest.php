@@ -24,8 +24,8 @@ class UpdateProductRequest extends FormRequest
         return [
             'code' => 'required|min:2|max:20|unique:products,code,' . $this->id,
             'name' => 'required|min:5|max:255|unique:products,name,' . $this->id,
-            'image' => 'mimes:jpeg,jpg,png',
             'price' => 'required|integer|min:1',
+            'status' => 'required'
         ];
     }
 
@@ -39,7 +39,6 @@ class UpdateProductRequest extends FormRequest
             'name.unique' => 'Tên sản phẩm không được trùng.',
             'name.min' => 'Tên sản phẩm phải ít nhất 5 kí tự.',
             'name.max' => 'Tên sản phẩm quá dài.',
-            'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
             'price.integer' => 'Gía sản phẩm phải là số.',
             'price.min' => 'Gía sản phẩm phải lớn hơn 0.',
         ];
