@@ -49,37 +49,36 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            // Tạo ngẫu nhiên tên ảnh 12 kí tự
-            $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/users/avatars/';
+        // if ($request->hasFile('avatar')) {
+        //     $file = $request->file('avatar');
+        //     // Tạo ngẫu nhiên tên ảnh 12 kí tự
+        //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+        //     // Đường dẫn ảnh
+        //     $imageDirectory = 'images/users/avatars/';
 
-            $file->move($imageDirectory, $imageName);
-            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => bcrypt($request->password),
-                'role_id' => 3,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'birthday' => $request->birthday,
-                'avatar' => $path_image,
-                'fileName' => $imageName,
-                'verification_token' => Str::random(40)
-            ]);
-            $data = [
-                'title' => 'Xác thực Email',
-                'name' => $user->name,
-                'token' => $user->verification_token
-            ];
-            Mail::to($request->email)->send(new VerifyEmail($data));
-            // Trả về access_token và thông tin user khi đăng ký thành công
-            return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
-        }
+        //     $file->move($imageDirectory, $imageName);
+        //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+        // }
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role_id' => 3,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'birthday' => $request->birthday,
+            'avatar' => 'avatar.png',
+            'fileName' => 'filename.png',
+            'verification_token' => Str::random(40)
+        ]);
+        $data = [
+            'title' => 'Xác thực Email',
+            'name' => $user->name,
+            'token' => $user->verification_token
+        ];
+        Mail::to($request->email)->send(new VerifyEmail($data));
+        // Trả về access_token và thông tin user khi đăng ký thành công
+        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
     }
 
 

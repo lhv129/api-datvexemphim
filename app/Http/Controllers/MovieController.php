@@ -91,8 +91,6 @@ class MovieController extends Controller
                     ]);
                 }
                 // Khi thêm phim thì cũng phải thêm diễn viên cho phim đó.
-                // Lấy ra id của phim vừa thêm (mới nhất)
-                $latestIdMovie = Movie::orderBy('id', 'desc')->first()->id;
                 foreach ($request->actors as $actor) {
                     Actor_movie::create([
                         'movie_id' => $latestIdMovie,
