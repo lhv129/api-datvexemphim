@@ -23,7 +23,6 @@ class UpdatePromocodeRequest extends FormRequest
     public function rules()
     {
         $id = $this->route('id'); // Lấy id từ route parameters
-
         return [
             'code' => [
                 'required',
@@ -32,7 +31,7 @@ class UpdatePromocodeRequest extends FormRequest
             'description' => 'required|string|max:255',
             'status' => 'required|boolean',
             'discount_amount' => 'required|numeric|min:0',
-            'start_date' => 'required|date|after_or_equal:today',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
         ];
     }
