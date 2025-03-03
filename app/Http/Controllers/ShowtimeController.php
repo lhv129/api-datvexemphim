@@ -5,21 +5,44 @@ use App\Http\Requests\StoreShowtimeRequest;
 use App\Http\Requests\UpdateShowtimeRequest;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ShowtimeController extends Controller
 {
-    public function index() {
-        $showtimes = Showtime::select('id', 'start_time', 'end_time', 'movie_id', 'screen_id')
+    public function index(Request $request) {
+        $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
             ->with(['screen:id,name', 'movie:id,title'])
+            ->where('date' , $request->date)
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
     public function store(StoreShowtimeRequest $request) {
         try {
-            $showtime = Showtime::create($request->validated());
-            return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+            $validatedData = $request->validated();
+            $showtimes = [];
+
+            foreach ($validatedData['showtimes'] as $showtimeData) {
+                // Kiểm tra trùng start_time với suất chiếu đã có trong cùng screen_id
+                $exists = Showtime::where('screen_id', $showtimeData['screen_id'])
+                    ->where('start_time', '<=', $showtimeData['start_time'])
+                    ->where('end_time', '>=', $showtimeData['start_time'])
+                    ->exists();
+
+                if ($exists) {
+                    return response()->json([
+                        'status' => 400,
+                        'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+                        'data' => $showtimeData
+                    ], 400);
+                }
+
+                $showtimes[] = Showtime::create($showtimeData);
+            }
+
+            return $this->responseCommon(201, "Thêm mới thành công.", $showtimes);
         } catch (\Exception $e) {
+            Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
@@ -41,7 +64,6 @@ class ShowtimeController extends Controller
 
     public function show($id) {
         try {
-            // Kiểm tra sự tồn tại của bản ghi (bao gồm cả trường hợp đã bị xóa mềm)
             $showtime = Showtime::with(['screen:id,name', 'movie:id,title'])
                 ->where('id', $id)->whereNull('deleted_at')->first();
 
@@ -57,14 +79,13 @@ class ShowtimeController extends Controller
 
     public function destroy($id) {
         try {
-            // Kiểm tra sự tồn tại của bản ghi (bao gồm cả trường hợp đã bị xóa mềm)
             $showtime = Showtime::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$showtime) {
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);
             }
 
-            $showtime->delete();  // Xóa mềm
+            $showtime->delete();
             return $this->responseCommon(200, "Xóa Giờ Chiếu thành công.", []);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);

@@ -13,17 +13,16 @@ class CheckRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
-        $role = intval($role);
         // Kiểm tra xem người dùng đã đăng nhập chưa
         if (!$request->user()) {
-            return response()->json(["status"=> "Failed", "message" => "Vui lòng đăng nhập trước."], 401); // Trả về lỗi 401 Unauthorized nếu chưa đăng nhập
+            return response()->json(["status" => "Failed", "message" => "Vui lòng đăng nhập trước."], 401); // Trả về 401 Unauthorized nếu chưa đăng nhập
         }
 
         // Kiểm tra vai trò của người dùng
-        if ($request->user()->role_id !== $role) {
-            return response()->json(["status"=> "Failed", "message" => "Bạn không có quyền truy cập."], 403); // Trả về lỗi 403 Forbidden nếu không có quyền truy cập
+        if (!in_array($request->user()->role_id, $roles)) {
+            return response()->json(["status" => "Failed", "message" => "Bạn không có quyền truy cập."], 403); // Trả về 403 Forbidden nếu không có quyền truy cập
         }
 
         return $next($request); // Cho phép request tiếp tục nếu có quyền truy cập

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCinemaRequest;
 use App\Http\Requests\UpdateCinemaRequest;
 use App\Models\Cinema;
+use App\Models\Province;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,20 +19,32 @@ class CinemaController extends Controller
         return $this->responseCommon(200, "Lấy danh sách thành công", $cinemas);
     }
 
+    public function getAllByProvinceId(Request $request) {
+        $province = Province::find($request->province_id);
+        if(!$province) {
+            return $this->responseCommon(404,"Tỉnh thành không tồn tại",[]);
+        }
+        $cinemas = Cinema::select('id', 'code', 'name', 'address', 'image', 'contact', 'province_id')
+            ->with(['province:id,name'])
+            ->where('province_id',$request->province_id)
+            ->get();
+        return $this->responseCommon(200, "Lấy danh sách thành công", $cinemas);
+    }
+
     public function store(StoreCinemaRequest $request) {
         try {
             $data = $request->validated();
 
-            if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-                $imageDirectory = 'storage/images/cinemas/';
+            // if ($request->hasFile('image')) {
+            //     $file = $request->file('image');
+            //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+            //     $imageDirectory = 'storage/images/cinemas/';
 
-                $file->storeAs('public/images/cinemas', $imageName);
+            //     $file->storeAs('public/images/cinemas', $imageName);
 
-                $data['image'] = 'http://filmgo.io.vn/' . $imageDirectory . $imageName;
-            }
-
+            //     $data['image'] = 'http://filmgo.io.vn/' . $imageDirectory . $imageName;
+            // }
+            $data['image'] = Str::random(12);
             $cinema = Cinema::create($data);
 
             return $this->responseCommon(201, "Thêm mới thành công.", $cinema);
@@ -44,7 +57,6 @@ class CinemaController extends Controller
 
     public function update(UpdateCinemaRequest $request, $id) {
         try {
-            // Kiểm tra xem rạp có tồn tại không (tránh lỗi `findOrFail`)
             $cinema = Cinema::where('id', $id)->whereNull('deleted_at')->first();
 
             if (!$cinema) {
@@ -53,20 +65,18 @@ class CinemaController extends Controller
 
             $data = $request->validated();
 
-            if ($request->hasFile('image')) {
-                // Xóa ảnh cũ trước khi lưu ảnh mới
-                if (!empty($cinema->image)) {
-                    $oldImagePath = str_replace(url('/storage/'), 'public/', $cinema->image);
-                    Storage::delete($oldImagePath);
-                }
+            // if ($request->hasFile('image')) {
+            //     if (!empty($cinema->image)) {
+            //         $oldImagePath = str_replace(url('/storage/'), 'public/', $cinema->image);
+            //         Storage::delete($oldImagePath);
+            //     }
 
-                // Lưu ảnh mới
-                $file = $request->file('image');
-                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-                $imagePath = $file->storeAs('public/images/cinemas', $imageName);
-                $data['image'] = url(Storage::url($imagePath));
-            }
-
+            //     $file = $request->file('image');
+            //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+            //     $imagePath = $file->storeAs('public/images/cinemas', $imageName);
+            //     $data['image'] = url(Storage::url($imagePath));
+            // }
+            $data['image'] = Str::random(12);
             $cinema->update($data);
 
             return $this->responseCommon(200, "Cập nhật thành công.", $cinema);

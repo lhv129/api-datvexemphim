@@ -23,7 +23,7 @@ class ActorController extends Controller
             'name' => 'required|min:2|max:50',
             'avatar' => 'required|mimes:jpeg,jpg,png'
         ], [
-            'required' => 'Không được để trống tên thể loại.',
+            'required' => 'Không được để trống :attribute.',
             'min' => 'Tên diễn viên thiểu ít nhất 2 kí tự.',
             'max' => 'Tên diễn viên quá dài.',
             'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png.',

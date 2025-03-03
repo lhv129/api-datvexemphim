@@ -32,7 +32,7 @@ class StoreCinemaRequest extends FormRequest
                 })
             ],
             'address' => 'required',
-            'image' => 'required|mimes:jpeg,jpg,png',
+            // 'image' => 'required|mimes:jpeg,jpg,png',
             'contact' => 'required',
             'province_id' => [
                 'required',
@@ -49,7 +49,7 @@ class StoreCinemaRequest extends FormRequest
             'name.unique' => 'Tên đã tồn tại trong tỉnh này.',
             'name.min' => 'Tên phải ít nhất 5 kí tự.',
             'name.max' => 'Tên quá dài.',
-            'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg, jpg, png.',
+            // 'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg, jpg, png.',
             'province_id.exists' => 'Tỉnh thành không tồn tại.',
         ];
     }
