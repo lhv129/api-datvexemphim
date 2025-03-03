@@ -29,7 +29,7 @@ class RegisterRequest extends FormRequest
             'phone' => 'required|regex:/^(0)[0-9]{9}$/',
             'address' => 'required|min:6|max:255',
             'birthday' => 'required',
-            'avatar' => 'required',
+            // 'avatar' => 'required',
         ];
     }
 
