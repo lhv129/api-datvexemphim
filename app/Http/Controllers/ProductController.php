@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -41,45 +42,35 @@ class ProductController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateProductRequest $request, $id)
     {
         try {
             $product = Product::findOrFail($id);
 
-            $rules = $this->validateUpdateProduct($id);
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                // Đường dẫn ảnh
+                $imageDirectory = 'images/products/';
+                // Xóa ảnh nếu ảnh cũ
+                File::delete($imageDirectory . $product->fileName);
+                // Tạo ngẫu nhiên tên ảnh 12 kí tự
+                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
 
-            $alert = $this->alertUpdateProduct();
+                $file->move($imageDirectory, $imageName);
 
-            $validator = Validator::make($request->all(), $rules, $alert);
-
-            if ($validator->fails()) {
-                return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
             } else {
-                if ($request->hasFile('image')) {
-                    $file = $request->file('image');
-                    // Đường dẫn ảnh
-                    $imageDirectory = 'images/products/';
-                    // Xóa ảnh nếu ảnh cũ
-                    File::delete($imageDirectory . $product->fileName);
-                    // Tạo ngẫu nhiên tên ảnh 12 kí tự
-                    $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-
-                    $file->move($imageDirectory, $imageName);
-
-                    $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-                } else {
-                    $path_image = $product->image;
-                }
-                $product->update([
-                    'code' => $request->code,
-                    'name' => $request->name,
-                    'price' => $request->price,
-                    'image' => $path_image,
-                    'fileName' => $imageName ?? $product->fileName, // Dùng toán tử 3 ngôi, nếu không thêm ảnh mới thì giữ lại tên ảnh cũ
-                    'status' => $request->status
-                ]);
-                return $this->responseCommon(200, "Cập nhật sản phẩm thành công.", $product);
+                $path_image = $product->image;
             }
+            $product->update([
+                'code' => $request->code,
+                'name' => $request->name,
+                'price' => $request->price,
+                'image' => $path_image,
+                'fileName' => $imageName ?? $product->fileName, // Dùng toán tử 3 ngôi, nếu không thêm ảnh mới thì giữ lại tên ảnh cũ
+                'status' => $request->status
+            ]);
+            return $this->responseCommon(200, "Cập nhật sản phẩm thành công.", $product);
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Sản phẩm này không tồn tại hoặc đã bị xóa.", []);
         }
