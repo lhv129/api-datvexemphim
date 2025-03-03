@@ -21,7 +21,6 @@ return new class extends Migration
             $table->enum('status', ['available', 'booked', 'reserved'])->default('available');
             $table->unsignedBigInteger('screen_id');
             $table->foreign('screen_id')->references('id')->on('screens')->onDelete('cascade');
-
             $table->softDeletes();
             $table->timestamps();
         });
