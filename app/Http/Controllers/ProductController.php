@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -45,13 +46,13 @@ class ProductController extends Controller
     {
         try {
             $product = Product::findOrFail($id);
+            Log::info('ID nhận được:', ['id' => $id]);
 
             $rules = $this->validateUpdateProduct($id);
 
             $alert = $this->alertUpdateProduct();
 
             $validator = Validator::make($request->all(), $rules, $alert);
-
             if ($validator->fails()) {
                 return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
             } else {
