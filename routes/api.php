@@ -45,14 +45,14 @@ Route::group([
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('profile', [AuthController::class, 'profile']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
-    Route::get('verify-email/{token}',[AuthController::class,'verifyEmail'])->name('verify-email');
+    Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail'])->name('verify-email');
 
 });
 
 // Các route chỉ dành cho addmin
 Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
 
-    
+
 });
 // Api Products
 Route::post('products/create', [ProductController::class, 'store']);
@@ -112,6 +112,8 @@ Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
 //Api ticket
 Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
 Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
+Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
+Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
 
 //Api users
 Route::get('users', [UserController::class, 'index']);
@@ -184,7 +186,7 @@ Route::get('blogs', [BlogController::class, 'index']);
 Route::get('blogs/show/{id}', [BlogController::class, 'show']);
 
 //Api roles
-Route::get('roles',[RoleController::class,'index']);
+Route::get('roles', [RoleController::class, 'index']);
 Route::get('roles/show/{id}', [RoleController::class, 'show']);
 
 //thanh toán
