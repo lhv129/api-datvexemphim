@@ -91,8 +91,6 @@ class MovieController extends Controller
                     ]);
                 }
                 // Khi thêm phim thì cũng phải thêm diễn viên cho phim đó.
-                // Lấy ra id của phim vừa thêm (mới nhất)
-                $latestIdMovie = Movie::orderBy('id', 'desc')->first()->id;
                 foreach ($request->actors as $actor) {
                     Actor_movie::create([
                         'movie_id' => $latestIdMovie,
@@ -109,63 +107,65 @@ class MovieController extends Controller
 
     public function update(UpdateMovieRequest $request, $id)
     {
-        try {
-            $movie = Movie::findOrFail($id);
-            $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
-            if (!$genresExist) {
-                return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
-            }
-            $actorsExist = Actor::whereIn('id', $request->actors)->count() == count($request->actors);
-            if (!$actorsExist) {
-                return $this->responseCommon(400, "Một hoặc nhiều diễn viên không tồn tại.", []);
-            }
-            if ($request->hasFile('poster')) {
-                $file = $request->file('poster');
-                // Đường dẫn ảnh
-                $imageDirectory = 'images/movies/';
-                // Xóa ảnh nếu ảnh cũ
-                File::delete($imageDirectory . $movie->fileName);
-                // Tạo ngẫu nhiên tên ảnh 12 kí tự
-                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+        $movie = Movie::findOrFail($id);
+        $genresExist = Genre::whereIn('id', $request->genres)->count() == count($request->genres);
+        if (!$genresExist) {
+            return $this->responseCommon(400, "Một hoặc nhiều thể loại không tồn tại.", []);
+        }
+        $actorsExist = Actor::whereIn('id', $request->actors)->count() == count($request->actors);
+        if (!$actorsExist) {
+            return $this->responseCommon(400, "Một hoặc nhiều diễn viên không tồn tại.", []);
+        }
+        if ($request->hasFile('poster')) {
+            $file = $request->file('poster');
+            // Đường dẫn ảnh
+            $imageDirectory = 'images/movies/';
+            // Xóa ảnh nếu ảnh cũ
+            File::delete($imageDirectory . $movie->fileName);
+            // Tạo ngẫu nhiên tên ảnh 12 kí tự
+            $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
 
-                $file->move($imageDirectory, $imageName);
+            $file->move($imageDirectory, $imageName);
 
-                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-            } else {
-                $path_image = $movie->poster;
-            }
-            $movie->update([
-                'title' => $request->title,
-                'description' => $request->description,
-                'poster' => $path_image,
-                'fileName' => $imageName ?? $movie->fileName, // Dùng toán tử 3 ngôi, nếu không thêm ảnh mới thì giữ lại tên ảnh cũ
-                'trailer' => $request->trailer,
-                'duration' => $request->duration,
-                'rating' => $request->rating,
-                'release_date' => $request->release_date,
-            ]);
-            $movie['genres'] = $request->genres;
-            $movie['actors'] = $request->actors;
-            //Xóa toàn bộ thể loại phim cũ và thêm lại thể loại cho phim đó dựa theo update
-            Movie_genre::where('movie_id', $id)->delete();
+            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+        } else {
+            $path_image = $movie->poster;
+        }
+        $movie->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'poster' => $path_image,
+            'fileName' => $imageName ?? $movie->fileName, // Dùng toán tử 3 ngôi, nếu không thêm ảnh mới thì giữ lại tên ảnh cũ
+            'trailer' => $request->trailer,
+            'duration' => $request->duration,
+            'rating' => $request->rating,
+            'release_date' => $request->release_date,
+        ]);
+        $movie['genres'] = $request->genres;
+        $movie['actors'] = $request->actors;
+        //Xóa toàn bộ thể loại phim cũ và thêm lại thể loại cho phim đó dựa theo update
+        $deleteGenres = Movie_genre::where('movie_id', $id)->delete();
+        if ($deleteGenres) {
             foreach ($request->genres as $genre) {
                 Movie_genre::create([
                     'movie_id' => $id,
                     'genre_id' => $genre
                 ]);
             }
-            //Xóa toàn bộ diễn viên phim cũ và thêm lại diễn viên cho phim đó dựa theo update
-            Actor_movie::where('movie_id', $id)->delete();
+        }
+
+        //Xóa toàn bộ diễn viên phim cũ và thêm lại diễn viên cho phim đó dựa theo update
+        $deleteActor = Actor_movie::where('movie_id', $id)->delete();
+        if ($deleteActor) {
             foreach ($request->actors as $actor) {
                 Actor_movie::create([
                     'movie_id' => $id,
                     'actor_id' => $actor
                 ]);
             }
-            return $this->responseCommon(200, "Cập nhật phim thành công.", $movie);
-        } catch (\Exception $e) {
-            return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
         }
+
+        return $this->responseCommon(200, "Cập nhật phim thành công.", $movie);
     }
 
     public function show($id)

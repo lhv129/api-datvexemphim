@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Mail;
+use Milon\Barcode\DNS1D;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PaymentMethodController extends Controller
 {
@@ -93,6 +96,26 @@ class PaymentMethodController extends Controller
                 $seats = $ticket->ticketDetails()->with('seat')->get();
                 $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
 
+                // 🔹 Tạo mã vạch từ mã vé
+                $barcodeGenerator = new DNS1D();
+                $barcodeData = $barcodeGenerator->getBarcodePNG($ticket->code, "C128", 2.5, 80, [0, 0, 0], true);
+
+                // 🔹 Đặt tên file mã vạch dựa trên mã vé
+                $barcodeName = $ticket->code . '.png';
+                $barcodeDirectory = 'images/tickets/barcodes/';
+                $barcodePath = public_path($barcodeDirectory . $barcodeName);
+
+                // 🔹 Tạo thư mục nếu chưa có
+                if (!file_exists(public_path($barcodeDirectory))) {
+                    mkdir(public_path($barcodeDirectory), 0777, true);
+                }
+
+                // 🔹 Lưu mã vạch thành file ảnh PNG
+                file_put_contents($barcodePath, base64_decode($barcodeData));
+
+                // 🔹 Đường dẫn mã vạch để nhúng vào email
+                $barcodeUrl = public_path($barcodeDirectory . $barcodeName);
+
                 // Tạo dữ liệu email
                 $emailData = [
                     'ticket_code' => $ticket->code,
@@ -106,6 +129,7 @@ class PaymentMethodController extends Controller
                     'user_email' => $ticket->user->email,
                     'promotion' => number_format($ticket->discount_price, 0, ',', '.') . 'đ',
                     'products' => $productList,
+                    'barcode_url' => $barcodeUrl,
                 ];
 
                 // Gửi email

@@ -18,7 +18,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh','verifyEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail']]);
     }
 
     public function login(LoginRequest $request)
@@ -49,17 +49,16 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            // Tạo ngẫu nhiên tên ảnh 12 kí tự
-            $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/users/avatars/';
+        // if ($request->hasFile('avatar')) {
+        //     $file = $request->file('avatar');
+        //     // Tạo ngẫu nhiên tên ảnh 12 kí tự
+        //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+        //     // Đường dẫn ảnh
+        //     $imageDirectory = 'images/users/avatars/';
 
-            $file->move($imageDirectory, $imageName);
-            $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-        }
-
+        //     $file->move($imageDirectory, $imageName);
+        //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+        // }
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -68,8 +67,8 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'address' => $request->address,
             'birthday' => $request->birthday,
-            'avatar' => $path_image,
-            'fileName' => $imageName,
+            'avatar' => 'avatar.png',
+            'fileName' => 'filename.png',
             'verification_token' => Str::random(40)
         ]);
         $data = [
@@ -103,7 +102,7 @@ class AuthController extends Controller
                 'user' => $user,
             ]);
         } else {
-            return $this->responseError(404, "Token không hợp lệ hoặc đã hết hạn.",[]);
+            return $this->responseError(404, "Token không hợp lệ hoặc đã hết hạn.", []);
         }
     }
 

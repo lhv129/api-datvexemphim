@@ -22,14 +22,14 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|unique:users,name',
+            'name' => 'required|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|max:100',
             "confirm_password" => 'required|min:6|max:100|same:password',
-            'phone' => 'required|regex:/^(0)(98)[0-9]{7}$/',
+            'phone' => 'required|regex:/^(0)[0-9]{9}$/',
             'address' => 'required|min:6|max:255',
             'birthday' => 'required',
-            'avatar' => 'required|mimes:jpeg,jpg,png',
+            // 'avatar' => 'required',
         ];
     }
 
@@ -42,8 +42,7 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Email của bạn đã được tạo, vui lòng chọn email khác.',
             'min' => ':attribute. tối thiểu ít nhất 6 kí tự.',
             'max' => ':attribute. quá dài, vui lòng nhập lại.',
-            'phone.regex' => 'Sai định dạng số điện thoại, vui lòng kiểm tra lại.',
-            'avatar.mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png.',
+            'phone.regex' => 'Số điện thoại phải bắt đầu từ 0 và đủ 10 số',
             'same' => 'Mật khẩu phải giống nhau,vui lòng kiểm tra lại.'
         ];
     }

@@ -38,6 +38,15 @@ class ProvinceController extends Controller
         }
     }
 
+    public function show($id){
+        try {
+            $province = Province::findOrFail($id);
+            return $this->responseCommon(200, "Tìm tỉnh thành thành công.", $province);
+        } catch (\Exception $e) {
+            return $this->responseCommon(404, "Tỉnh thành này không tồn tại hoặc đã bị xóa.",[]);
+        }
+    }
+
     public function destroy($id) {
         try {
             $province = Province::where('id', $id)->whereNull('deleted_at')->first();

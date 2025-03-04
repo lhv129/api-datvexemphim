@@ -8,6 +8,19 @@
     <h2>Xin chào,</h2>
     <p>Cảm ơn bạn đã đặt vé tại FilmGo. Dưới đây là thông tin vé của bạn:</p>
 
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+        <tr>
+            <td align="center" valign="top" style="padding: 36px 24px;">
+                <a href="#" target="_blank" style="display: inline-block;">
+                    <img src="{{ $message->embed($emailData['barcode_url']) }}" alt="Mã vạch" border="0"
+                         style="display: block;">
+                </a>
+            </td>
+        </tr>
+    </table>
+
+    <p>Vui lòng đưa mã vé này đến quầy vé để nhận vé.</p>
+
     <h3>Thông tin vé:</h3>
     <ul>
         <li><strong>Mã vé:</strong> {{ $emailData['ticket_code'] }}</li>
@@ -21,8 +34,6 @@
         <li><strong>Khuyến mãi:</strong> {{ $emailData['promotion'] }}</li>
         <li><strong>Tổng cộng:</strong> {{ $emailData['total_amount'] }}</li>
     </ul>
-
-    <p>Vui lòng đưa mã vé này đến quầy vé để nhận vé.</p>
 
     <p>Chúc bạn có một trải nghiệm xem phim tuyệt vời! 🎬</p>
 

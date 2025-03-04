@@ -10,7 +10,14 @@ use Illuminate\Support\Facades\Validator;
 
 class SeatController extends Controller
 {
-    public function index(Request $request) {
+    public function index() {
+        $seats = Seat::select('id', 'row','number','type','price','status','screen_id')
+            ->with(['screen:id,name'])
+            ->get();
+        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
+    }
+
+    public function getAllByScreenId(Request $request) {
         $screen = Screen::find($request->screen_id);
         if(!$screen) {
             return $this->responseCommon(404,"Phòng không tồn tại.",[]);

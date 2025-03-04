@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Screen;
+use App\Models\Cinema;
 use App\Http\Requests\StoreScreenRequest;
 use App\Http\Requests\UpdateScreenRequest;
 use Illuminate\Http\Request;
@@ -11,6 +12,18 @@ class ScreenController extends Controller
     public function index() {
         $screens = Screen::select('id', 'name', 'cinema_id')
             ->with(['cinema:id,name'])
+            ->get();
+        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $screens);
+    }
+
+    public function getAllByCinemaId(Request $request) {
+        $cinema = Cinema::find($request->cinema_id);
+        if(!$cinema) {
+            return $this->responseCommon(404,"Rạp không tồn tại.",[]);
+        }
+        $screens = Screen::select('id', 'name', 'cinema_id')
+            ->with(['cinema:id,name'])
+            ->where('cinema_id',$request->cinema_id)
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $screens);
     }
