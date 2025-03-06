@@ -172,13 +172,17 @@ class AuthController extends Controller
 
     private function respondWithToken($token, $refreshToken)
     {
+        $user = User::select('users.id','users.name','role_id','roles.name as role_name','email','email_verified_at','phone','address','birthday','avatar','fileName','status')
+        ->join('roles','roles.id','role_id')
+        ->where('users.id',auth('api')->user()->id)
+        ->get();
         return response()->json([
             'access_token' => $token,
             'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
             // 'expires_in' => JWTAuth::getTTL() * 60,
             'expires_in' => config('jwt.ttl') * 60,
-            'user' => auth('api')->user(),
+            'user' => $user,
         ]);
     }
 
