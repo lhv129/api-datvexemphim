@@ -92,7 +92,7 @@ class TicketController extends Controller
         $discount = $this->calculateDiscount($request->promo_code_id, $totalBeforeDiscount);
         $totalAmount = $totalBeforeDiscount - $discount;
 
-        $ticketCode = 'MB-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6));
+        $ticketCode = now()->format('Ymd') . random_int(100000, 999999);
 
         $ticket = Ticket::create([
             'user_id' => $user->id,
@@ -330,6 +330,62 @@ class TicketController extends Controller
 
         return $this->responseCommon(200, 'Lấy chi tiết vé cho admin thành công.', $response);
     }
+
+    public function checkTicket(Request $request)
+    {
+        // Lấy barcode từ body
+        $barcode = $request->input('barcode');
+
+        if (!$barcode) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Mã vạch không được để trống'
+            ], 400);
+        }
+
+        // Tìm vé theo mã vạch
+        $ticket = Ticket::where('code', $barcode)->first();
+
+        if (!$ticket) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Vé không tồn tại'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'ticket' => [
+                'code' => $ticket->code,
+                'movie' => $ticket->showtime->movie->title,
+                'showtime' => $ticket->showtime->start_time,
+                'cinema' => $ticket->showtime->screen->cinema->name,
+                'screen' => $ticket->showtime->screen->name,
+                'seats' => $ticket->ticketDetails->pluck('seat.number'),
+                'status' => $ticket->status
+            ]
+        ]);
+    }
+
+
+    public function confirmTicketUsage(Request $request)
+    {
+        $ticket = Ticket::find($request->ticket_id);
+
+        if (!$ticket) {
+            return response()->json(['status' => 'error', 'message' => 'Không tìm thấy vé!'], 404);
+        }
+
+        if ($ticket->status === 'used') {
+            return response()->json(['status' => 'error', 'message' => 'Vé đã được sử dụng!'], 400);
+        }
+
+        // Cập nhật trạng thái vé
+        $ticket->update(['status' => 'used']);
+
+        return response()->json(['status' => 'success', 'message' => 'Vé đã được xác nhận và sử dụng!']);
+    }
+
 
 
 }

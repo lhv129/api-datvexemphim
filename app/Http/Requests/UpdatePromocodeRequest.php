@@ -23,17 +23,16 @@ class UpdatePromocodeRequest extends FormRequest
     public function rules()
     {
         $id = $this->route('id'); // Lấy id từ route parameters
-
         return [
             'code' => [
                 'required',
                 Rule::unique('promo_codes')->ignore($id)->whereNull('deleted_at')
             ],
             'description' => 'required|string|max:255',
-            'status' => 'required',
             'discount_amount' => 'required|numeric|min:0',
-            'start_date' => 'required|date|after_or_equal:today',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:active,inactive',
         ];
     }
 

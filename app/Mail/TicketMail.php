@@ -24,6 +24,7 @@ class TicketMail extends Mailable
     public function build()
     {
         return $this->subject('Vé xem phim của bạn tại FilmGo')
-            ->view('emails.ticket-mail');
+            ->view('emails.ticket-mail')
+            ->with(['emailData' => $this->emailData]);
     }
 }

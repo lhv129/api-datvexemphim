@@ -47,26 +47,25 @@ Route::group([
     Route::get('profile', [AuthController::class, 'profile']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail'])->name('verify-email');
+
 });
 
 // Các route chỉ dành cho user
 Route::middleware(['auth:api', 'checkRole:1,3'])->group(function () {
     //Api cần đăng nhập nhưng cả user lẫn admin đều dùng được
-
-
     //Api reviews
     Route::post('reviews/create', [ReviewController::class, 'store']);
     Route::put('reviews/update/{id}', [ReviewController::class, 'update']);
     Route::delete('reviews/delete/{id}', [ReviewController::class, 'destroy']);
 
 
-
     // Route dành cho admin
     Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
         Route::get('reviews', [ReviewController::class, 'index']);
     });
-    
+   
 });
+
 // Api Products
 Route::post('products/create', [ProductController::class, 'store']);
 Route::put('products/update/{id}', [ProductController::class, 'update']);
@@ -125,6 +124,8 @@ Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
 //Api ticket
 Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
 Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
+Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
+Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
 
 //Api users
 Route::get('users', [UserController::class, 'index']);
