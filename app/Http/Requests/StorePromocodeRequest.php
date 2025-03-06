@@ -26,11 +26,11 @@ class StorePromocodeRequest extends FormRequest
             'code' => [
                 'required',
                 Rule::unique('promo_codes')->where(function ($query) {
-                    return $query->whereNull('deleted_at'); // Kiểm tra chỉ trong các bản ghi chưa bị xóa mềm
+                    return $query->whereNull('deleted_at');
                 })
             ],
             'description' => 'required|string|max:255',
-            'discount_amount' => 'required|numeric|min:0', // Số tiền giảm giá phải là số và không nhỏ hơn 0
+            'discount_amount' => 'required|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:today', // Ngày bắt đầu phải là ngày hôm nay hoặc sau
             'end_date' => 'required|date|after:start_date', // Ngày kết thúc phải sau ngày bắt đầu
         ];

@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -46,6 +47,7 @@ class ProductController extends Controller
     {
         try {
             $product = Product::findOrFail($id);
+            Log::info('ID nhận được:', ['id' => $id]);
 
             if ($request->hasFile('image')) {
                 $file = $request->file('image');
@@ -58,7 +60,12 @@ class ProductController extends Controller
 
                 $file->move($imageDirectory, $imageName);
 
-                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+
+            // $validator = Validator::make($request->all(), $rules, $alert);
+            // if ($validator->fails()) {
+            //     return $this->responseError(422, "Dữ liệu không hợp lệ", $validator->errors());
+
+            //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
             } else {
                 $path_image = $product->image;
             }
