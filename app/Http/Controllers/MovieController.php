@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreMovieRequest;
-use App\Http\Requests\UpdateMovieRequest;
 use App\Models\Actor;
-use App\Models\Actor_movie;
-use App\Models\Movie_actor;
 use App\Models\Genre;
 use App\Models\Movie;
+use App\Models\Review;
+use App\Models\Actor_movie;
+use App\Models\Movie_actor;
 use App\Models\Movie_genre;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use App\Http\Requests\StoreMovieRequest;
+use App\Http\Requests\UpdateMovieRequest;
 
 class MovieController extends Controller
 {
@@ -194,6 +195,12 @@ class MovieController extends Controller
 
             //Xóa luôn những thể loại phim đó.
             $movie_genres = Movie_genre::where('movie_id', $id)->delete();
+
+            //Xóa luôn những diễn viên phim đó.
+            $actor_movies = Actor_movie::where('movie_id',$id)->delete();
+
+            //Xóa luôn bình luận về phim đó.
+            $reviews = Review::where('movie_id',$id)->delete();
 
             $movie->delete();
 
