@@ -11,6 +11,7 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\ProvinceController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
@@ -45,13 +46,25 @@ Route::group([
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('profile', [AuthController::class, 'profile']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
-    Route::get('verify-email/{token}',[AuthController::class,'verifyEmail'])->name('verify-email');
-
+    Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail'])->name('verify-email');
 });
 
-// Các route chỉ dành cho addmin
-Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
+// Các route chỉ dành cho user
+Route::middleware(['auth:api', 'checkRole:1,3'])->group(function () {
+    //Api cần đăng nhập nhưng cả user lẫn admin đều dùng được
 
+
+    //Api reviews
+    Route::post('reviews/create', [ReviewController::class, 'store']);
+    Route::put('reviews/update/{id}', [ReviewController::class, 'update']);
+    Route::delete('reviews/delete/{id}', [ReviewController::class, 'destroy']);
+
+
+
+    // Route dành cho admin
+    Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
+        Route::get('reviews', [ReviewController::class, 'index']);
+    });
     
 });
 // Api Products
@@ -184,12 +197,15 @@ Route::get('blogs', [BlogController::class, 'index']);
 Route::get('blogs/show/{id}', [BlogController::class, 'show']);
 
 //Api roles
-Route::get('roles',[RoleController::class,'index']);
+Route::get('roles', [RoleController::class, 'index']);
 Route::get('roles/show/{id}', [RoleController::class, 'show']);
 
 //thanh toán
 Route::post('tickets/payment/vnpay', [PaymentMethodController::class, 'createPayment']);
 Route::get('tickets/payment/vnpay/callback', [PaymentMethodController::class, 'vnpayCallback']);
+
+//Api reviews
+Route::post('reviews', [ReviewController::class, 'getReviewByMovieId']);
 
 // Các route liên quan đến vé (cần đăng nhập)
 Route::middleware(['auth:api'])->group(function () {
