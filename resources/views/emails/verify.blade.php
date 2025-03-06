@@ -128,7 +128,7 @@
                     <tr>
                         <td align="center" valign="top" style="padding: 36px 24px;">
                             <a href="" target="_blank" style="display: inline-block;">
-                                <img src="{{ $message->embed(public_path('/images/banners/hpsKyScrrYmu.png')) }}" alt="Logo" border="0" width="88" style="display: block; width: 88px; max-width: 88px; min-width: 88px;">
+                                <img src="{{ $message->embed(public_path('/images/banners/8kEet9dckI4i.png')) }}" alt="Logo" border="0" width="88" style="display: block; width: 88px; max-width: 88px; min-width: 88px;">
                             </a>
                         </td>
                     </tr>
