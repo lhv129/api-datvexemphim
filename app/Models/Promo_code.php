@@ -18,9 +18,6 @@ class Promo_code extends Model
         'end_date',
         'status',
     ];
-    protected $casts = [
-        'status' => 'boolean',
-    ];
     public $timestamps = true ;
 
 }
