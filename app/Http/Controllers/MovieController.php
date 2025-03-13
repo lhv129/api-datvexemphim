@@ -177,6 +177,10 @@ class MovieController extends Controller
                 ->join('genres', 'genres.id', 'movie_genres.genre_id')
                 ->where('movie_genres.movie_id', $id)
                 ->get();
+            $movie['actors'] = Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                ->where('actor_movies.movie_id', $id)
+                ->get();
             return $this->responseCommon(200, "Tìm phim thành công.", $movie);
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
@@ -197,10 +201,10 @@ class MovieController extends Controller
             $movie_genres = Movie_genre::where('movie_id', $id)->delete();
 
             //Xóa luôn những diễn viên phim đó.
-            $actor_movies = Actor_movie::where('movie_id',$id)->delete();
+            $actor_movies = Actor_movie::where('movie_id', $id)->delete();
 
             //Xóa luôn bình luận về phim đó.
-            $reviews = Review::where('movie_id',$id)->delete();
+            $reviews = Review::where('movie_id', $id)->delete();
 
             $movie->delete();
 
