@@ -17,35 +17,33 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
-    public function store(StoreShowtimeRequest $request) {
-        try {
-            $validatedData = $request->validated();
-            $showtimes = [];
+    public function store(StoreShowtimeRequest $request)
+{
+    try {
+        $validatedData = $request->validated();
 
-            foreach ($validatedData['showtimes'] as $showtimeData) {
-                // Kiểm tra trùng start_time với suất chiếu đã có trong cùng screen_id
-                $exists = Showtime::where('screen_id', $showtimeData['screen_id'])
-                    ->where('start_time', '<=', $showtimeData['start_time'])
-                    ->where('end_time', '>=', $showtimeData['start_time'])
-                    ->exists();
+        $exists = Showtime::where('screen_id', $validatedData['screen_id'])
+            ->where('start_time', '<=', $validatedData['start_time'])
+            ->where('end_time', '>=', $validatedData['start_time'])
+            ->exists();
 
-                if ($exists) {
-                    return response()->json([
-                        'status' => 400,
-                        'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
-                        'data' => $showtimeData
-                    ], 400);
-                }
-
-                $showtimes[] = Showtime::create($showtimeData);
-            }
-
-            return $this->responseCommon(201, "Thêm mới thành công.", $showtimes);
-        } catch (\Exception $e) {
-            Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
-            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
+        if ($exists) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+                'data' => $validatedData
+            ], 400);
         }
+
+        $showtime = Showtime::create($validatedData);
+
+        return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+    } catch (\Exception $e) {
+        Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
+        return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
     }
+}
+
 
     public function update(UpdateShowtimeRequest $request, $id) {
         try {

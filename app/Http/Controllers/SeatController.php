@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Validator;
 
 class SeatController extends Controller
 {
-    public function index() {
+    public function index(Request $request) {
         $seats = Seat::select('id', 'row','number','type','price','status','screen_id')
             ->with(['screen:id,name'])
+            // ->where('screen_id',$request->screen_id)
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
     }
