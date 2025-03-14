@@ -51,8 +51,11 @@ public function store(StoreShowtimeRequest $request)
             $validatedData = $request->validated();
 
             // Chuyển đổi ngày giờ từ định dạng d/m/Y H:i sang Y-m-d H:i:s
-            $validatedData['start_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['start_time'])->format('Y-m-d H:i:s');
-            $validatedData['end_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['end_time'])->format('Y-m-d H:i:s');
+            // $validatedData['start_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['start_time'])->format('Y-m-d H:i:s');
+            // $validatedData['end_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['end_time'])->format('Y-m-d H:i:s');
+
+            $validatedData['start_time'] = Carbon::createFromFormat('H:i', $validatedData['start_time'])->format('H:i:s');
+            $validatedData['end_time'] = Carbon::createFromFormat('H:i', $validatedData['end_time'])->format('H:i:s');
 
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
                 ->where('start_time', '<=', $validatedData['start_time'])
