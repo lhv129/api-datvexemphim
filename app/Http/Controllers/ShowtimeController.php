@@ -50,7 +50,7 @@ public function store(StoreShowtimeRequest $request)
         try {
             $validatedData = $request->validated();
 
-            // Chuyển đổi ngày giờ từ định dạng  H:i sang  H:i:s
+            // Chuyển đổi ngày giờ từ định dạng H:i sang H:i:s
 
             $validatedData['start_time'] = Carbon::createFromFormat('H:i', $validatedData['start_time'])->format('H:i:s');
             $validatedData['end_time'] = Carbon::createFromFormat('H:i', $validatedData['end_time'])->format('H:i:s');
