@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreShowtimeRequest;
 use App\Http\Requests\UpdateShowtimeRequest;
 use App\Models\Showtime;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -17,32 +18,63 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
-    public function store(StoreShowtimeRequest $request)
-{
-    try {
-        $validatedData = $request->validated();
+//     public function store(StoreShowtimeRequest $request)
+// {
+//     try {
+//         $validatedData = $request->validated();
 
-        $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-            ->where('start_time', '<=', $validatedData['start_time'])
-            ->where('end_time', '>=', $validatedData['start_time'])
-            ->exists();
+//         $exists = Showtime::where('screen_id', $validatedData['screen_id'])
+//             ->where('start_time', '<=', $validatedData['start_time'])
+//             ->where('end_time', '>=', $validatedData['start_time'])
+//             ->exists();
 
-        if ($exists) {
-            return response()->json([
-                'status' => 400,
-                'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
-                'data' => $validatedData
-            ], 400);
+//         if ($exists) {
+//             return response()->json([
+//                 'status' => 400,
+//                 'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+//                 'data' => $validatedData
+//             ], 400);
+//         }
+
+//         $showtime = Showtime::create($validatedData);
+
+//         return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+//     } catch (\Exception $e) {
+//         Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
+//         return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
+//     }
+// }
+
+public function store(StoreShowtimeRequest $request)
+    {
+        try {
+            $validatedData = $request->validated();
+
+            // Chuyển đổi ngày giờ từ định dạng d/m/Y H:i sang Y-m-d H:i:s
+            $validatedData['start_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['start_time'])->format('Y-m-d H:i:s');
+            $validatedData['end_time'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['end_time'])->format('Y-m-d H:i:s');
+
+            $exists = Showtime::where('screen_id', $validatedData['screen_id'])
+                ->where('start_time', '<=', $validatedData['start_time'])
+                ->where('end_time', '>=', $validatedData['start_time'])
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'status' => 400,
+                    'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+                    'data' => $validatedData
+                ], 400);
+            }
+
+            $showtime = Showtime::create($validatedData);
+
+            return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+        } catch (\Exception $e) {
+            Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
+            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
-
-        $showtime = Showtime::create($validatedData);
-
-        return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
-    } catch (\Exception $e) {
-        Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
-        return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
     }
-}
 
 
     public function update(UpdateShowtimeRequest $request, $id) {
