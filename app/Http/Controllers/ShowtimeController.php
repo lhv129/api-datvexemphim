@@ -18,26 +18,19 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
-    public function store(StoreShowtimeRequest $request)    {
+    public function store(StoreShowtimeRequest $request) {
         try {
             $validatedData = $request->validated();
 
-            // Chuyển đổi ngày giờ từ định dạng H:i sang H:i:s
+            // Thêm giây ':00' vào giờ nhận từ FE
+            $validatedData['start_time'] .= ':00';
+            $validatedData['end_time'] .= ':00';
 
-            try {
-                $validatedData['start_time'] = Carbon::createFromFormat('H:i', $validatedData['start_time'])->format('H:i:s');
-                $validatedData['end_time'] = Carbon::createFromFormat('H:i', $validatedData['end_time'])->format('H:i:s');
-            } catch (\Exception $e) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Thời gian không hợp lệ. Định dạng phải là H:i.',
-                    'error' => $e->getMessage()
-                ], 400);
-            }
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-            ->where('start_time', '<=', $validatedData['start_time'])
-            ->where('end_time', '>=', $validatedData['start_time'])
-            ->exists();
+                ->where('start_time', '<=', $validatedData['start_time'])
+                ->where('end_time', '>=', $validatedData['start_time'])
+                ->exists();
+
             if ($exists) {
                 return response()->json([
                     'status' => 400,
