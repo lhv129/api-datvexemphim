@@ -36,8 +36,8 @@ class StoreShowtimeRequest extends FormRequest
                 'required',
                 Rule::exists('screens', 'id')->whereNull('deleted_at'),
             ],
-            'start_time' => 'required|date_format:H:i:s',
-            'end_time' => 'required|date_format:H:i:s|after:start_time',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'date' => 'required|date_format:Y-m-d|after_or_equal:today',
         ];
     }
