@@ -36,12 +36,12 @@ class StoreShowtimeRequest extends FormRequest
                 'required',
                 Rule::exists('screens', 'id')->whereNull('deleted_at'),
             ],
-            'start_time' => 'required|regex:/^\d{2}:\d{2}(:\d{2})?$/',
-            'end_time' => 'required|regex:/^\d{2}:\d{2}(:\d{2})?$/|after:start_time',
-
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'date' => 'required|date_format:Y-m-d|after_or_equal:today',
         ];
     }
+
 
 
     public function messages()
@@ -52,10 +52,10 @@ class StoreShowtimeRequest extends FormRequest
             'screen_id.required' => 'Vui lòng chọn màn hình chiếu.',
             'screen_id.exists' => 'Màn hình chiếu không tồn tại.',
             'start_time.required' => 'Vui lòng nhập thời gian bắt đầu.',
-            'start_time.date_format' => 'Thời gian bắt đầu không đúng định dạng (H:i:s).',
+            'start_time.date_format' => 'Thời gian bắt đầu không đúng định dạng (H:i).',
             'start_time.after' => 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại.',
             'end_time.required' => 'Vui lòng nhập thời gian kết thúc.',
-            'end_time.date_format' => 'Thời gian kết thúc không đúng định dạng (H:i:s).',
+            'end_time.date_format' => 'Thời gian kết thúc không đúng định dạng (H:i).',
             'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
             'date.required' => 'Vui lòng chọn ngày chiếu.',
             'date.date_format' => 'Ngày chiếu phải đúng định dạng (Y-m-d).',
