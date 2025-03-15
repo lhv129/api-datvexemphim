@@ -10,7 +10,14 @@ use Illuminate\Support\Facades\Log;
 
 class ShowtimeController extends Controller
 {
-    public function index(Request $request) {
+    public function index() {
+        $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
+            ->with(['screen:id,name', 'movie:id,title'])
+            ->get();
+        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
+    }
+
+    public function getAllByDate(Request $request) {
         $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
             ->with(['screen:id,name', 'movie:id,title'])
             ->where('date' , $request->date)
@@ -22,14 +29,22 @@ class ShowtimeController extends Controller
         try {
             $validatedData = $request->validated();
 
-            // Thêm giây ':00' vào giờ nhận từ FE
-            $validatedData['start_time'] .= ':00';
-            $validatedData['end_time'] .= ':00';
+            // Sử dụng Carbon để định dạng start_time và end_time
+            $validatedData['start_time'] = Carbon::createFromFormat('Y-m-d H:i', $validatedData['date'] . ' ' . $validatedData['start_time'])
+                ->format('Y-m-d H:i:s');
 
+            $validatedData['end_time'] = Carbon::createFromFormat('Y-m-d H:i', $validatedData['date'] . ' ' . $validatedData['end_time'])
+                ->format('Y-m-d H:i:s');
+
+            // Kiểm tra suất chiếu trùng lặp
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-                ->where('start_time', '<=', $validatedData['start_time'])
-                ->where('end_time', '>=', $validatedData['start_time'])
+                ->whereDate('start_time', $validatedData['date']) // Thêm điều kiện ngày
+                ->where(function ($query) use ($validatedData) {
+                    $query->where('start_time', '<=', $validatedData['start_time'])
+                        ->where('end_time', '>=', $validatedData['start_time']);
+                })
                 ->exists();
+
 
             if ($exists) {
                 return response()->json([
@@ -41,10 +56,18 @@ class ShowtimeController extends Controller
 
             $showtime = Showtime::create($validatedData);
 
-            return $this->responseCommon(201, "Thêm mới thành công.", $showtime);
+            return response()->json([
+                'status' => 201,
+                'message' => "Thêm mới thành công.",
+                'data' => $showtime
+            ], 201);
         } catch (\Exception $e) {
             Log::error('Lỗi xử lý:', ['error' => $e->getMessage()]);
-            return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
+            return response()->json([
+                'status' => 500,
+                'message' => "Lỗi xử lý.",
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
