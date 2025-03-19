@@ -182,7 +182,7 @@ Route::get('screens/show/{id}', [ScreenController::class, 'show']);
 
 // Api Seats
 Route::get('seats', [SeatController::class, 'index']);
-Route::post('seats', [SeatController::class, 'getAllByScreenId']);
+Route::post('get-seat-by-screen', [SeatController::class, 'getAllByScreenId']);
 Route::get('seats/show/{id}', [SeatController::class, 'show']);
 
 // Api Promo_codes
