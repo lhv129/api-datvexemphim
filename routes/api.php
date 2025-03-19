@@ -177,7 +177,7 @@ Route::get('cinemas/show/{id}', [CinemaController::class, 'show']);
 
 // Api Screens
 Route::get('screens', [ScreenController::class, 'index']);
-Route::post('screens', [ScreenController::class, 'getAllByCinemaId']);
+Route::post('get-screen-by-cinema', [ScreenController::class, 'getAllByCinemaId']);
 Route::get('screens/show/{id}', [ScreenController::class, 'show']);
 
 // Api Seats
