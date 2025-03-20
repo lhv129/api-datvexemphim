@@ -29,22 +29,14 @@ class ShowtimeController extends Controller
         try {
             $validatedData = $request->validated();
 
-            // Sử dụng Carbon để định dạng start_time và end_time
-            $validatedData['start_time'] = Carbon::createFromFormat('Y-m-d H:i', $validatedData['date'] . ' ' . $validatedData['start_time'])
-                ->format('Y-m-d H:i:s');
-
-            $validatedData['end_time'] = Carbon::createFromFormat('Y-m-d H:i', $validatedData['date'] . ' ' . $validatedData['end_time'])
-                ->format('Y-m-d H:i:s');
-
             // Kiểm tra suất chiếu trùng lặp
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-                ->whereDate('start_time', $validatedData['date']) // Thêm điều kiện ngày
+                ->whereDate('start_time', $validatedData['date'])
                 ->where(function ($query) use ($validatedData) {
                     $query->where('start_time', '<=', $validatedData['start_time'])
                         ->where('end_time', '>=', $validatedData['start_time']);
                 })
                 ->exists();
-
 
             if ($exists) {
                 return response()->json([
@@ -72,6 +64,7 @@ class ShowtimeController extends Controller
     }
 
 
+
     public function update(UpdateShowtimeRequest $request, $id) {
         try {
             $showtime = Showtime::where('id', $id)->whereNull('deleted_at')->first();
@@ -80,17 +73,45 @@ class ShowtimeController extends Controller
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);
             }
 
-            $showtime->update($request->validated());
+            $validatedData = $request->validated();
+
+            // Kiểm tra suất chiếu trùng lặp
+            $exists = Showtime::where('screen_id', $validatedData['screen_id'])
+                ->whereDate('start_time', $validatedData['date'])
+                ->where(function ($query) use ($validatedData, $id) {
+                    $query->where('start_time', '<=', $validatedData['start_time'])
+                        ->where('end_time', '>=', $validatedData['start_time'])
+                        ->where('id', '!=', $id); // Loại trừ suất chiếu hiện tại
+                })
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'status' => 400,
+                    'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
+                    'data' => $validatedData
+                ], 400);
+            }
+
+            $showtime->update($validatedData);
+
             return $this->responseCommon(200, "Cập nhật thành công.", $showtime);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
         }
     }
 
+
     public function show($id) {
         try {
-            $showtime = Showtime::with(['screen:id,name', 'movie:id,title'])
-                ->where('id', $id)->whereNull('deleted_at')->first();
+            $showtime = Showtime::with([
+                'screen:id,name,cinema_id',
+                'screen.cinema:id,name,address',
+                'movie:id,title'
+            ])
+            ->where('id', $id)
+            ->whereNull('deleted_at')
+            ->first();
 
             if (!$showtime) {
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);

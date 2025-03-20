@@ -3,8 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class StoreShowtimeRequest extends FormRequest
 {
@@ -15,15 +15,29 @@ class StoreShowtimeRequest extends FormRequest
     {
         return true;
     }
+
     public function expectsJson()
     {
         return true;
     }
 
     /**
+     * Chuẩn hóa dữ liệu trước khi validation
+     */
+    protected function prepareForValidation()
+    {
+        if ($this->has(['date', 'start_time', 'end_time'])) {
+            $this->merge([
+                'start_time' => Carbon::createFromFormat('Y-m-d H:i', $this->date . ' ' . $this->start_time)
+                    ->format('Y-m-d H:i:s'),
+                'end_time' => Carbon::createFromFormat('Y-m-d H:i', $this->date . ' ' . $this->end_time)
+                    ->format('Y-m-d H:i:s'),
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -36,14 +50,15 @@ class StoreShowtimeRequest extends FormRequest
                 'required',
                 Rule::exists('screens', 'id')->whereNull('deleted_at'),
             ],
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required|date_format:Y-m-d H:i:s',
+            'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
             'date' => 'required|date_format:Y-m-d|after_or_equal:today',
         ];
     }
 
-
-
+    /**
+     * Custom messages
+     */
     public function messages()
     {
         return [
@@ -52,15 +67,13 @@ class StoreShowtimeRequest extends FormRequest
             'screen_id.required' => 'Vui lòng chọn màn hình chiếu.',
             'screen_id.exists' => 'Màn hình chiếu không tồn tại.',
             'start_time.required' => 'Vui lòng nhập thời gian bắt đầu.',
-            'start_time.date_format' => 'Thời gian bắt đầu không đúng định dạng (H:i).',
-            'start_time.after' => 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại.',
+            'start_time.date_format' => 'Thời gian bắt đầu không đúng định dạng (Y-m-d H:i:s).',
             'end_time.required' => 'Vui lòng nhập thời gian kết thúc.',
-            'end_time.date_format' => 'Thời gian kết thúc không đúng định dạng (H:i).',
+            'end_time.date_format' => 'Thời gian kết thúc không đúng định dạng (Y-m-d H:i:s).',
             'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
             'date.required' => 'Vui lòng chọn ngày chiếu.',
             'date.date_format' => 'Ngày chiếu phải đúng định dạng (Y-m-d).',
             'date.after_or_equal' => 'Ngày chiếu phải là hôm nay hoặc sau hôm nay.',
         ];
     }
-
 }
