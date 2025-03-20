@@ -96,24 +96,24 @@ class PaymentMethodController extends Controller
                 $seats = $ticket->ticketDetails()->with('seat')->get();
                 $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
 
-                // 🔹 Tạo mã vạch từ mã vé
+                //  Tạo mã vạch từ mã vé
                 $barcodeGenerator = new DNS1D();
                 $barcodeData = $barcodeGenerator->getBarcodePNG($ticket->code, "C128", 2.5, 80, [0, 0, 0], true);
 
-                // 🔹 Đặt tên file mã vạch dựa trên mã vé
+                //  Đặt tên file mã vạch dựa trên mã vé
                 $barcodeName = $ticket->code . '.png';
                 $barcodeDirectory = 'images/tickets/barcodes/';
                 $barcodePath = public_path($barcodeDirectory . $barcodeName);
 
-                // 🔹 Tạo thư mục nếu chưa có
+                //  Tạo thư mục nếu chưa có
                 if (!file_exists(public_path($barcodeDirectory))) {
                     mkdir(public_path($barcodeDirectory), 0777, true);
                 }
 
-                // 🔹 Lưu mã vạch thành file ảnh PNG
+                //  Lưu mã vạch thành file ảnh PNG
                 file_put_contents($barcodePath, base64_decode($barcodeData));
 
-                // 🔹 Đường dẫn mã vạch để nhúng vào email
+                //  Đường dẫn mã vạch để nhúng vào email
                 $barcodeUrl = public_path($barcodeDirectory . $barcodeName);
 
                 // Tạo dữ liệu email
@@ -135,7 +135,7 @@ class PaymentMethodController extends Controller
                 // Gửi email
                 Mail::to($emailData['user_email'])->send(new TicketMail($emailData));
 
-                return response()->json(['message' => 'Thanh toán thành công'], 200);
+                return redirect()->route('ticket.detail', ['id' => $ticket->id]);
             } else {
                 return response()->json(['message' => 'Thanh toán không thành công'], 400);
             }
