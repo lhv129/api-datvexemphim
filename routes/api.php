@@ -63,7 +63,7 @@ Route::middleware(['auth:api', 'checkRole:1,3'])->group(function () {
     Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
         Route::get('reviews', [ReviewController::class, 'index']);
     });
-   
+
 });
 
 // Api Products
@@ -212,6 +212,6 @@ Route::post('reviews', [ReviewController::class, 'getReviewByMovieId']);
 // Các route liên quan đến vé (cần đăng nhập)
 Route::middleware(['auth:api'])->group(function () {
     Route::get('tickets', [TicketController::class, 'index']);     // Lấy danh sách vé của người dùng
-    Route::post('tickets', [TicketController::class, 'store']);    // Đặt vé mới
-    Route::get('tickets/{id}', [TicketController::class, 'show']); // Lấy chi tiết vé theo ID
+    Route::post('tickets/create', [TicketController::class, 'store']);    // Đặt vé mới
+    Route::get('tickets/detail/{id}', [TicketController::class, 'show']); // Lấy chi tiết vé theo ID
 });
