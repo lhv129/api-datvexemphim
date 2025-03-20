@@ -123,7 +123,7 @@ Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
 
 //Api ticket
 Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
-Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow']);
+Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow'])->name('adminShow');
 Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
 Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
 
@@ -213,5 +213,5 @@ Route::post('reviews', [ReviewController::class, 'getReviewByMovieId']);
 Route::middleware(['auth:api'])->group(function () {
     Route::get('tickets', [TicketController::class, 'index']);     // Lấy danh sách vé của người dùng
     Route::post('tickets/create', [TicketController::class, 'store']);    // Đặt vé mới
-    Route::get('tickets/detail/{id}', [TicketController::class, 'show']); // Lấy chi tiết vé theo ID
+    Route::get('tickets/detail/{id}', [TicketController::class, 'show'])->name('ticket.detail'); // Lấy chi tiết vé theo ID
 });

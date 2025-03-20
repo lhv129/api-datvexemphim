@@ -27,13 +27,13 @@ class TicketController extends Controller
             ->get();
 
         $data = $tickets->map(function ($ticket) {
+            $seats = $ticket->ticketDetails()->with('seat')->get();
+            $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
             return [
                 'ticket_code' => $ticket->code,
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
-                // 'seats' => $ticket->details->map(function ($detail) {
-                //     return $detail->seat->number;
-                // }),
+                'seats' => $seatList,
                 'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
                 'status' => $ticket->status
             ];
@@ -353,18 +353,8 @@ class TicketController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'ticket' => [
-                'code' => $ticket->code,
-                'movie' => $ticket->showtime->movie->title,
-                'showtime' => $ticket->showtime->start_time,
-                'cinema' => $ticket->showtime->screen->cinema->name,
-                'screen' => $ticket->showtime->screen->name,
-                'seats' => $ticket->ticketDetails->pluck('seat.number'),
-                'status' => $ticket->status
-            ]
-        ]);
+        return redirect()->route('adminShow', ['id' => $ticket->id]);
+
     }
 
 
