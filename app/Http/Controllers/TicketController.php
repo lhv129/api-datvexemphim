@@ -30,6 +30,7 @@ class TicketController extends Controller
             $seats = $ticket->ticketDetails()->with('seat')->get();
             $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
             return [
+                'ticket_id' => $ticket->id,
                 'ticket_code' => $ticket->code,
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
