@@ -29,6 +29,18 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
+    public function getAllByMovieTitle(Request $request) {
+        $showtimes = Showtime::select('id', 'start_time', 'end_time', 'date', 'movie_id', 'screen_id')
+            ->with(['screen:id,name', 'movie:id,title'])
+            ->whereHas('movie', function ($query) use ($request) {
+                $query->where('title', 'LIKE', "%{$request->title}%");
+            })
+            ->get();
+
+        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
+    }
+
+
     public function store(StoreShowtimeRequest $request) {
         try {
             $validatedData = $request->validated();

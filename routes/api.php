@@ -67,72 +67,72 @@ Route::middleware(['auth:api', 'checkRole:1,3'])->group(function () {
     Route::post('movies/create', [MovieController::class, 'store']);
     Route::put('movies/update/{id}', [MovieController::class, 'update']);
     Route::delete('movies/delete/{id}', [MovieController::class, 'destroy']);
-    
+
     //Api Roles
     Route::post('roles/create', [RoleController::class, 'store']);
     Route::put('roles/update/{id}', [RoleController::class, 'update']);
     Route::delete('roles/delete/{id}', [RoleController::class, 'destroy']);
-    
+
     // Api Banners
     Route::post('banners/create', [BannerController::class, 'store']);
     Route::put('banners/update/{id}', [BannerController::class, 'update']);
     Route::delete('banners/delete/{id}', [BannerController::class, 'destroy']);
-    
+
     // Api Provinces
     Route::post('provinces/create', [ProvinceController::class, 'store']);
     Route::put('provinces/update/{id}', [ProvinceController::class, 'update']);
     Route::delete('provinces/delete/{id}', [ProvinceController::class, 'destroy']);
-    
+
     // Api Cinemas
     Route::post('cinemas/create', [CinemaController::class, 'store']);
     Route::put('cinemas/update/{id}', [CinemaController::class, 'update']);
     Route::delete('cinemas/delete/{id}', [CinemaController::class, 'destroy']);
-    
+
     // Api Screens
     Route::post('screens/create', [ScreenController::class, 'store']);
     Route::put('screens/update/{id}', [ScreenController::class, 'update']);
     Route::delete('screens/delete/{id}', [ScreenController::class, 'destroy']);
-    
+
     // Api Seats
     Route::post('seats/create', [SeatController::class, 'store']);
     Route::put('seats/update/{id}', [SeatController::class, 'update']);
     Route::delete('seats/delete/{id}', [SeatController::class, 'destroy']);
-    
+
     // Api Promo_codes
     Route::post('promocodes/create', [PromocodeController::class, 'store']);
     Route::put('promocodes/update/{id}', [PromocodeController::class, 'update']);
     Route::delete('promocodes/delete/{id}', [PromocodeController::class, 'destroy']);
-    
+
     // Api Showtimes
     Route::post('showtimes/create', [ShowtimeController::class, 'store']);
     Route::put('showtimes/update/{id}', [ShowtimeController::class, 'update']);
     Route::delete('showtimes/delete/{id}', [ShowtimeController::class, 'destroy']);
-    
+
     // Api blogs
     Route::post('blogs/create', [BlogController::class, 'store']);
     Route::put('blogs/update/{id}', [BlogController::class, 'update']);
     Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
-    
+
     //Api ticket
     Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
     Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow'])->name('adminShow');
     Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
     Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
-    
+
     //Api users
     Route::get('users', [UserController::class, 'index']);
     Route::post('users/create', [UserController::class, 'store']);
     Route::put('users/update/{id}', [UserController::class, 'update']);
     Route::get('users/show/{id}', [UserController::class, 'show']);
     Route::delete('users/delete/{id}', [UserController::class, 'destroy']);
-    
+
     //Api genres
     Route::get('genres', [GenreController::class, 'index']);
     Route::post('genres/create', [GenreController::class, 'store']);
     Route::put('genres/update/{id}', [GenreController::class, 'update']);
     Route::get('genres/show/{id}', [GenreController::class, 'show']);
     Route::delete('genres/delete/{id}', [GenreController::class, 'destroy']);
-    
+
     //Api actors
     Route::get('actors', [ActorController::class, 'index']);
     Route::post('actors/create', [ActorController::class, 'store']);
@@ -192,6 +192,7 @@ Route::get('promocodes/show/{id}', [PromocodeController::class, 'show']);
 // Api Showtimes
 Route::get('showtimes', [ShowtimeController::class, 'index']);
 Route::post('showtimes', [ShowtimeController::class, 'getAllByDate']);
+Route::post('showtimes', [ShowtimeController::class, 'getAllByMovieTitle']);
 Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
 
 // Api blogs
