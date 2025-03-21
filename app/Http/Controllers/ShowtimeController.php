@@ -35,12 +35,17 @@ class ShowtimeController extends Controller
 
             // Kiểm tra suất chiếu trùng lặp
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-                ->whereDate('start_time', $validatedData['date'])
-                ->where(function ($query) use ($validatedData) {
-                    $query->where('start_time', '<=', $validatedData['start_time'])
-                        ->where('end_time', '>=', $validatedData['start_time']);
-                })
-                ->exists();
+            ->whereDate('start_time', $validatedData['date']) // Cùng ngày
+            ->where(function ($query) use ($validatedData) {
+                $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']]) // Trùng trong khoảng thời gian suất mới
+                      ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']]) // Trùng thời gian kết thúc
+                      ->orWhere(function ($query) use ($validatedData) { // Suất cũ bao trùm suất mới
+                          $query->where('start_time', '<=', $validatedData['start_time'])
+                                ->where('end_time', '>=', $validatedData['end_time']);
+                      });
+            })
+            ->exists();
+
 
             if ($exists) {
                 return response()->json([
