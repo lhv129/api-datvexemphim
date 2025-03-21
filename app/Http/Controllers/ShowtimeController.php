@@ -12,7 +12,11 @@ class ShowtimeController extends Controller
 {
     public function index() {
         $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
-            ->with(['screen:id,name', 'movie:id,title'])
+            ->with([
+                'screen:id,name,cinema_id',
+                'screen.cinema:id,name',
+                'movie:id,title'
+            ])
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
