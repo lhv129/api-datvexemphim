@@ -14,7 +14,7 @@ class ShowtimeController extends Controller
         $showtimes = Showtime::select('id', 'start_time', 'end_time', 'date', 'movie_id', 'screen_id')
             ->with([
                 'screen:id,name,cinema_id',
-                'screen.cinema:id,name',
+                'screen.cinema:id,name,province_id',
                 'screen.cinema.province:id,name',
                 'movie:id,title'
             ])
@@ -28,7 +28,7 @@ class ShowtimeController extends Controller
         $showtimes = Showtime::select('id', 'start_time', 'end_time','date', 'movie_id', 'screen_id')
            ->with([
                 'screen:id,name,cinema_id',
-                'screen.cinema:id,name',
+                'screen.cinema:id,name,province_id',
                 'screen.cinema.province:id,name',
                 'movie:id,title'
             ])
@@ -39,12 +39,12 @@ class ShowtimeController extends Controller
 
     public function getAllByMovieTitle(Request $request) {
         $showtimes = Showtime::select('id', 'start_time', 'end_time', 'date', 'movie_id', 'screen_id')
-        ->with([
-            'screen:id,name,cinema_id',
-            'screen.cinema:id,name',
-            'screen.cinema.province:id,name',
-            'movie:id,title'
-        ])
+            ->with([
+                'screen:id,name,cinema_id',
+                'screen.cinema:id,name,province_id',
+                'screen.cinema.province:id,name',
+                'movie:id,title'
+            ])
             ->whereHas('movie', function ($query) use ($request) {
                 $query->where('title', 'LIKE', "%{$request->title}%");
             })
@@ -140,7 +140,8 @@ class ShowtimeController extends Controller
         try {
             $showtime = Showtime::with([
                 'screen:id,name,cinema_id',
-                'screen.cinema:id,name,address',
+                'screen.cinema:id,name,province_id',
+                'screen.cinema.province:id,name',
                 'movie:id,title'
             ])
             ->where('id', $id)
