@@ -191,8 +191,8 @@ Route::get('promocodes/show/{id}', [PromocodeController::class, 'show']);
 
 // Api Showtimes
 Route::get('showtimes', [ShowtimeController::class, 'index']);
-Route::post('showtimes', [ShowtimeController::class, 'getAllByDate']);
-Route::post('showtimes', [ShowtimeController::class, 'getAllByMovieTitle']);
+Route::post('showtimes/getAllByDate', [ShowtimeController::class, 'getAllByDate']);
+Route::post('showtimes/getAllByMovieTitle', [ShowtimeController::class, 'getAllByMovieTitle']);
 Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
 
 // Api blogs
