@@ -16,7 +16,7 @@ class ShowtimeController extends Controller
                 'screen:id,name,cinema_id',
                 'screen.cinema:id,name,province_id',
                 'screen.cinema.province:id,name',
-                'movie:id,title'
+                'movie:id,title',
             ])
             ->get();
 

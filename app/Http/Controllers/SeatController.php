@@ -5,6 +5,7 @@ use App\Http\Requests\StoreSeatRequest;
 use App\Http\Requests\UpdateSeatRequest;
 use App\Models\Screen;
 use App\Models\Seat;
+use App\Models\Showtime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,6 +30,23 @@ class SeatController extends Controller
             ->get();
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
     }
+
+    public function getAllByShowtimeId(Request $request) {
+        $showtime = Showtime::find($request->showtime_id);
+        if (!$showtime) {
+            return $this->responseCommon(404, "Suất chiếu không tồn tại.", []);
+        }
+
+        $seats = Seat::select('id', 'row', 'number', 'type', 'price', 'status', 'screen_id')
+            ->with(['screen:id,name'])
+            ->whereHas('screen.showtimes', function ($query) use ($request) {
+                $query->where('id', $request->showtime_id);
+            })
+            ->get();
+
+        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
+    }
+
 
     public function store(StoreSeatRequest $request)
     {
