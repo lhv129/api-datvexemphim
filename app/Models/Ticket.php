@@ -27,7 +27,7 @@ class Ticket extends Model
 
     public function showtime()
     {
-        return $this->belongsTo(Showtime::class);
+        return $this->belongsTo(Showtime::class)->withTrashed();
     }
 
     public function paymentMethod()
