@@ -51,12 +51,15 @@ Route::group([
 });
 
 // Các route chỉ dành cho user
-Route::middleware(['auth:api', 'checkRole:1,3'])->group(function () {
+Route::middleware(['auth:api', 'checkRole:1,2,3'])->group(function () {
     //Api cần đăng nhập nhưng cả user lẫn admin đều dùng được
     //Api reviews
     Route::post('reviews/create', [ReviewController::class, 'store']);
     Route::put('reviews/update/{id}', [ReviewController::class, 'update']);
     Route::delete('reviews/delete/{id}', [ReviewController::class, 'destroy']);
+
+    //Api update profile
+    Route::put('profile/update',[AuthController::class,'updateProfile']);
 
 
     // Route dành cho admin
@@ -157,6 +160,7 @@ Route::get('products/show/{id}', [ProductController::class, 'show']);
 // Api Movies
 Route::get('movies', [MovieController::class, 'index']);
 Route::get('movies/show/{id}', [MovieController::class, 'show']);
+Route::post('movies/search',[MovieController::class,'searchMovie']);
 
 // Api Genres
 Route::get('genres', [GenreController::class, 'index']);

@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterRequest;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 
 class AuthController extends Controller
 {
@@ -49,16 +52,6 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        // if ($request->hasFile('avatar')) {
-        //     $file = $request->file('avatar');
-        //     // Tạo ngẫu nhiên tên ảnh 12 kí tự
-        //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-        //     // Đường dẫn ảnh
-        //     $imageDirectory = 'images/users/avatars/';
-
-        //     $file->move($imageDirectory, $imageName);
-        //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-        // }
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -67,8 +60,8 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'address' => $request->address,
             'birthday' => $request->birthday,
-            'avatar' => 'avatar.png',
-            'fileName' => 'filename.png',
+            'avatar' => 'http://filmgo.io.vn/images/avatars/default.jpg',
+            'fileName' => 'fileName.png',
             'verification_token' => Str::random(40)
         ]);
         $data = [
@@ -78,7 +71,7 @@ class AuthController extends Controller
         ];
         Mail::to($request->email)->send(new VerifyEmail($data));
         // Trả về access_token và thông tin user khi đăng ký thành công
-        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
+        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} hoặc trong thư rác để kích hoạt tài khoản", $user);
     }
 
 
@@ -115,6 +108,42 @@ class AuthController extends Controller
             return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
         } catch (\Exception $e) {
             return $this->responseError(500, 'Token không hợp lệ', $e);
+        }
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        try {
+            $user = User::where('id',Auth::user()->id)
+            ->first();
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                // Đường dẫn ảnh
+                $imageDirectory = 'images/users/avatars/';
+                // Xóa ảnh nếu ảnh cũ
+                File::delete($imageDirectory . $user->fileName);
+                // Tạo ngẫu nhiên tên ảnh 12 kí tự
+                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+
+                $file->move($imageDirectory, $imageName);
+
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+            } else {
+                $path_image = $user->avatar;
+                $imageName = $user->fileName;
+            }
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'birthday' => $request->birthday,
+                'avatar' => $path_image,
+                'fileName' => $imageName,
+            ]);
+            return $this->responseCommon(200, "Cập nhật hồ sơ cá nhân thành công.", $user);
+        } catch (\Exception $e) {
+            return $this->responseError(404, 'Người dùng không tồn tại', []);
         }
     }
 
@@ -172,10 +201,10 @@ class AuthController extends Controller
 
     private function respondWithToken($token, $refreshToken)
     {
-        $user = User::select('users.id','users.name','role_id','roles.name as role_name','email','email_verified_at','phone','address','birthday','avatar','fileName','status')
-        ->join('roles','roles.id','role_id')
-        ->where('users.id',auth('api')->user()->id)
-        ->get();
+        $user = User::select('users.id', 'users.name', 'role_id', 'roles.name as role_name', 'email', 'email_verified_at', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
+            ->join('roles', 'roles.id', 'role_id')
+            ->where('users.id', auth('api')->user()->id)
+            ->get();
         return response()->json([
             'access_token' => $token,
             'refresh_token' => $refreshToken,
