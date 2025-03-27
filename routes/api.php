@@ -71,7 +71,7 @@ Route::middleware(['auth:api', 'checkRole:1,2,3'])->group(function () {
     //Api update profile
     Route::put('profile/update', [AuthController::class, 'updateProfile']);
 
-
+ 
     // Route dành cho admin
     Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
         Route::get('reviews', [ReviewController::class, 'index']);
@@ -196,6 +196,7 @@ Route::get('screens/show/{id}', [ScreenController::class, 'show']);
 // Api Seats
 Route::get('seats', [SeatController::class, 'index']);
 Route::post('get-seat-by-screen', [SeatController::class, 'getAllByScreenId']);
+Route::post('get-seat-by-showtime', [SeatController::class, 'getAllByShowtimeId']);
 Route::get('seats/show/{id}', [SeatController::class, 'show']);
 
 // Api Promo_codes
@@ -204,6 +205,8 @@ Route::get('promocodes/show/{id}', [PromocodeController::class, 'show']);
 
 // Api Showtimes
 Route::get('showtimes', [ShowtimeController::class, 'index']);
+Route::post('showtimes/getAllByDate', [ShowtimeController::class, 'getAllByDate']);
+Route::post('showtimes/getAllByMovieTitle', [ShowtimeController::class, 'getAllByMovieTitle']);
 Route::get('showtimes/show/{id}', [ShowtimeController::class, 'show']);
 
 // Api blogs
@@ -224,6 +227,6 @@ Route::post('reviews', [ReviewController::class, 'getReviewByMovieId']);
 // Các route liên quan đến vé (cần đăng nhập)
 Route::middleware(['auth:api'])->group(function () {
     Route::get('tickets', [TicketController::class, 'index']);     // Lấy danh sách vé của người dùng
-    Route::post('tickets', [TicketController::class, 'store']);    // Đặt vé mới
-    Route::get('tickets/{id}', [TicketController::class, 'show']); // Lấy chi tiết vé theo ID
+    Route::post('tickets/create', [TicketController::class, 'store']);    // Đặt vé mới
+    Route::get('tickets/detail/{id}', [TicketController::class, 'show'])->name('ticket.detail'); // Lấy chi tiết vé theo ID
 });
