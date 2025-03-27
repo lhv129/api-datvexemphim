@@ -20,6 +20,17 @@ class Seat extends Model
     ];
     public $timestamps = true ;
 
+    public function showtimes() {
+        return $this->belongsToMany(Showtime::class, 'seat_showtimes')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+    public function orders()
+    {
+        return $this->hasManyThrough(Order::class, SeatShowtime::class, 'seat_id', 'id', 'id', 'order_id');
+    }
+
     public function screen() {
         return $this->belongsTo(Screen::class,'screen_id','id');
     }

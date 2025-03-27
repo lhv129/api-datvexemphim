@@ -7,6 +7,7 @@ use App\Models\Screen;
 use App\Models\Seat;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SeatController extends Controller
@@ -31,21 +32,69 @@ class SeatController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
     }
 
-    public function getAllByShowtimeId(Request $request) {
-        $showtime = Showtime::find($request->showtime_id);
+    // public function getSeatsByShowtime(Request $request) {
+    //     $showtime = Showtime::find($request->showtime_id);
+    //     if (!$showtime) {
+    //         return $this->responseCommon(404, "Suất chiếu không tồn tại.", []);
+    //     }
+
+    //     // Lấy danh sách tất cả ghế của suất chiếu
+    //     $seats = Seat::where('screen_id', $showtime->screen_id)
+    //         ->leftJoin('seat_showtimes', function ($join) use ($request) {
+    //             $join->on('seats.id', '=', 'seat_showtimes.id_seat')
+    //                  ->where('seat_showtimes.id_showtime', '=', $request->showtime_id);
+    //         })
+    //         ->select('seats.id', 'seats.row', 'seats.number', 'seats.type', 'seats.price',
+    //                  DB::raw('IF(seat_showtimes.order_id IS NULL, "available", "booked") as status'))
+    //         ->get();
+
+    //     return $this->responseCommon(200, "Lấy danh sách ghế thành công.", $seats);
+    // }
+
+    public function getSeatsByShowtime(Request $request)
+    {
+        $showtime = Showtime::with(['seats'])->find($request->showtime_id);
+
         if (!$showtime) {
-            return $this->responseCommon(404, "Suất chiếu không tồn tại.", []);
+            return response()->json(["message" => "Suất chiếu không tồn tại"], 404);
         }
 
-        $seats = Seat::select('id', 'row', 'number', 'type', 'price', 'status', 'screen_id')
-            ->with(['screen:id,name'])
-            ->whereHas('screen.showtimes', function ($query) use ($request) {
-                $query->where('id', $request->showtime_id);
-            })
-            ->get();
+        return response()->json([
+            "message" => "Lấy danh sách ghế thành công",
+            "data" => $showtime->seats->map(function ($seat) {
+                $seatShowtime = $seat->pivot;
+                $order = $seat->orders()->latest()->first();
+                return [
+                    "id" => $seatShowtime ? $seatShowtime->id : null,
+                    "showtime_id" => $seatShowtime ? $seatShowtime->showtime_id : null,
+                    "seat_id" => $seat->id,
+                    "order_id" => $order ? $order->id : null
+                ];
 
-        return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
+            })
+        ], 200);
     }
+
+
+
+    // public function getSeatsByShowtime(Request $request) {
+    //     $showtime = Showtime::find($request->showtime_id);
+    //     if (!$showtime) {
+    //         return $this->responseCommon(404, "Suất chiếu không tồn tại.", []);
+    //     }
+
+    //     $seats = Seat::leftJoin('ticket_details', function ($join) use ($request) {
+    //             $join->on('seats.id', '=', 'ticket_details.seat_id')
+    //                  ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+    //                  ->where('tickets.showtime_id', '=', $request->showtime_id);
+    //         })
+    //         ->select('seats.id', 'seats.row', 'seats.number', 'seats.type', 'seats.price',
+    //                  DB::raw('IF(ticket_details.seat_id IS NULL, "available", "booked") as status'))
+    //         ->get();
+
+    //     return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $seats);
+    // }
+
 
 
     public function store(StoreSeatRequest $request)
