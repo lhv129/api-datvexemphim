@@ -18,7 +18,13 @@ class ShowtimeController extends Controller
                 'screen.cinema.province:id,name',
                 'movie:id,title',
             ])
-            ->get();
+            ->get()
+            ->map(function($showtime) {
+                $showtime->start_time = Carbon::parse($showtime->start_time)->format('H:i');
+                $showtime->end_time = Carbon::parse($showtime->end_time)->format('H:i');
+                return $showtime;
+            })
+            ;
 
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }

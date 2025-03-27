@@ -25,6 +25,13 @@ class Showtime extends Model
         return $this->belongsTo(Movie::class);
     }
 
+    public function seats() {
+        return $this->belongsToMany(Seat::class, 'seat_showtimes')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+
     public function screen()
     {
         return $this->belongsTo(Screen::class);
