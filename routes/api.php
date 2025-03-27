@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CinemaController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\PaymentMethodController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerifyEmailController;
+use App\Http\Requests\ForgotPasswordRequest;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,6 +50,9 @@ Route::group([
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail'])->name('verify-email');
 
+    // Forget Password
+    Route::post('forgot-password/get-token', [ForgotPasswordController::class, 'sendToken']);
+    Route::put('forgot-password/verify',[ForgotPasswordController::class,'restorePassword']);
 });
 
 // Các route chỉ dành cho user
