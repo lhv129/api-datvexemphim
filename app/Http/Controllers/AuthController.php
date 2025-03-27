@@ -6,22 +6,24 @@ use App\Models\Role;
 use App\Models\User;
 use App\Mail\VerifyEmail;
 use Illuminate\Support\Str;
+use App\Models\SocialAccount;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterRequest;
+use Laravel\Socialite\Facades\Socialite;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail','loginUrl','loginCallback']]);
     }
 
     public function login(LoginRequest $request)
@@ -103,7 +105,7 @@ class AuthController extends Controller
     {
         try {
             $user = User::select('users.id', 'role_id', 'roles.name as role_name', 'email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
-                ->join('roles', 'roles.id', 'roles.id')
+                ->join('roles', 'roles.id', 'role_id')
                 ->find(auth('api')->user()->id);
             return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
         } catch (\Exception $e) {
@@ -114,8 +116,8 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request)
     {
         try {
-            $user = User::where('id',Auth::user()->id)
-            ->first();
+            $user = User::where('id', Auth::user()->id)
+                ->first();
             if ($request->hasFile('avatar')) {
                 $file = $request->file('avatar');
                 // Đường dẫn ảnh
@@ -174,6 +176,66 @@ class AuthController extends Controller
             // Mật khẩu không khớp
             return $this->responseCommon(401, 'Mật khẩu không chính xác.', []);
         }
+    }
+
+    // Login with google
+    public function loginUrl()
+    {
+        return response()->json([
+            'url' => Socialite::driver('google')->stateless()->with(['prompt' => 'select_account'])->redirect()->getTargetUrl(), //Lỗi text đỏ không ảnh hưởng
+        ]);
+    }
+
+    public function loginCallback()
+    {
+        $googleUser = Socialite::driver('google')->stateless()->with(['prompt' => 'select_account'])->user(); //Lỗi text đỏ không ảnh hưởng
+
+        $existingUser = User::withTrashed()
+            ->where('email', $googleUser->getEmail())
+            ->first();
+
+        if ($existingUser) {
+            if ($existingUser->status == 'active') {
+                $accessToken = auth('api')->login($existingUser);
+                $refreshToken = $this->createRefreshToken();
+
+                return $this->responseCommon(201, "Đăng nhập thành công", [
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'token_type' => 'bearer',
+                    'expires_in' => config('jwt.ttl') * 60,
+                    'user' => $existingUser,
+                ]);
+            } else {
+                return $this->responseCommon(400, 'Tài khoản của bạn đã bị khóa.', []);
+            }
+        }
+
+        $user = User::create([
+            'name' => $googleUser->getName(),
+            'email' => $googleUser->getEmail(),
+            'avatar' => $googleUser->getAvatar(),
+            'email_verified_at' => now(),
+            'status' => 'active',
+            'role_id' => 3
+        ]);
+
+        SocialAccount::create([
+            'user_id' => $user->id,
+            'social_id' => $googleUser->getId(),
+            'social_provider' => 'google',
+            'social_name' =>  $googleUser->getName(),
+        ]);
+
+        $accessToken = auth('api')->login($user);
+        $refreshToken = $this->createRefreshToken();
+        return $this->responseCommon(201, "Đăng nhập thành công", [
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'bearer',
+            'expires_in' => config('jwt.ttl') * 60,
+            'user' => $user,
+        ]);
     }
 
 

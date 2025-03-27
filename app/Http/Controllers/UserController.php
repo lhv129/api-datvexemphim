@@ -78,7 +78,6 @@ class UserController extends Controller
                 'status' => $request->status,
             ]);
             return $this->responseCommon(200, "Cập nhật người dùng thành công.", $user);
-
         } catch (\Exception $e) {
             return $this->responseError(404, "Người dùng này không tồn tại hoặc đã bị xóa.", $e->getMessage());
         }
@@ -88,10 +87,10 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/users/avatars/';
-            // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
-            File::delete($imageDirectory . $user->fileName);
+
+            $user->update([
+                'status' => 'inactive'
+            ]);
 
             $user->delete();
             return $this->responseCommon(200, "Xóa người dùng thành công.", []);
