@@ -104,7 +104,7 @@ class AuthController extends Controller
     public function profile()
     {
         try {
-            $user = User::select('users.id', 'role_id', 'roles.name as role_name', 'email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
+            $user = User::select('users.id', 'role_id', 'roles.name as role_name','users.name','email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
                 ->join('roles', 'roles.id', 'role_id')
                 ->find(auth('api')->user()->id);
             return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
