@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreShowtimeRequest;
 use App\Http\Requests\UpdateShowtimeRequest;
+use App\Models\Seat;
+use App\Models\SeatShowtime;
 use App\Models\Showtime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -59,24 +61,22 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
-
     public function store(StoreShowtimeRequest $request) {
         try {
             $validatedData = $request->validated();
 
             // Kiểm tra suất chiếu trùng lặp
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-            ->whereDate('start_time', $validatedData['date']) // Cùng ngày
-            ->where(function ($query) use ($validatedData) {
-                $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']]) // Trùng trong khoảng thời gian suất mới
-                      ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']]) // Trùng thời gian kết thúc
-                      ->orWhere(function ($query) use ($validatedData) { // Suất cũ bao trùm suất mới
-                          $query->where('start_time', '<=', $validatedData['start_time'])
-                                ->where('end_time', '>=', $validatedData['end_time']);
-                      });
-            })
-            ->exists();
-
+                ->whereDate('start_time', $validatedData['date'])
+                ->where(function ($query) use ($validatedData) {
+                    $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']])
+                          ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']])
+                          ->orWhere(function ($query) use ($validatedData) {
+                              $query->where('start_time', '<=', $validatedData['start_time'])
+                                    ->where('end_time', '>=', $validatedData['end_time']);
+                          });
+                })
+                ->exists();
 
             if ($exists) {
                 return response()->json([
@@ -86,7 +86,20 @@ class ShowtimeController extends Controller
                 ], 400);
             }
 
+            // Tạo showtime mới
             $showtime = Showtime::create($validatedData);
+
+            // Lấy danh sách ghế thuộc screen_id
+            $seats = Seat::where('screen_id', $validatedData['screen_id'])->get();
+
+            // Lưu vào bảng seat_showtimes
+            foreach ($seats as $seat) {
+                SeatShowtime::create([
+                    'seat_id' => $seat->id,
+                    'showtime_id' => $showtime->id,
+                    'status' => 'available' // Trạng thái ghế ban đầu
+                ]);
+            }
 
             return response()->json([
                 'status' => 201,
@@ -102,6 +115,7 @@ class ShowtimeController extends Controller
             ], 500);
         }
     }
+
 
 
 
@@ -172,7 +186,9 @@ class ShowtimeController extends Controller
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);
             }
 
+            SeatShowtime::where('showtime_id', $id)->delete();
             $showtime->delete();
+
             return $this->responseCommon(200, "Xóa Giờ Chiếu thành công.", []);
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", ['error' => $e->getMessage()]);
