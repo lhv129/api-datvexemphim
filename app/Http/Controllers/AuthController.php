@@ -6,19 +6,24 @@ use App\Models\Role;
 use App\Models\User;
 use App\Mail\VerifyEmail;
 use Illuminate\Support\Str;
+use App\Models\SocialAccount;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterRequest;
+use Laravel\Socialite\Facades\Socialite;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'verifyEmail','loginUrl','loginCallback']]);
     }
 
     public function login(LoginRequest $request)
@@ -49,16 +54,6 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        // if ($request->hasFile('avatar')) {
-        //     $file = $request->file('avatar');
-        //     // Tạo ngẫu nhiên tên ảnh 12 kí tự
-        //     $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
-        //     // Đường dẫn ảnh
-        //     $imageDirectory = 'images/users/avatars/';
-
-        //     $file->move($imageDirectory, $imageName);
-        //     $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-        // }
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -67,8 +62,8 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'address' => $request->address,
             'birthday' => $request->birthday,
-            'avatar' => 'avatar.png',
-            'fileName' => 'filename.png',
+            'avatar' => 'http://filmgo.io.vn/images/avatars/default.jpg',
+            'fileName' => 'fileName.png',
             'verification_token' => Str::random(40)
         ]);
         $data = [
@@ -78,7 +73,7 @@ class AuthController extends Controller
         ];
         Mail::to($request->email)->send(new VerifyEmail($data));
         // Trả về access_token và thông tin user khi đăng ký thành công
-        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} để kích hoạt tài khoản", $user);
+        return $this->responseCommon(201, "Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email {$request->email} hoặc trong thư rác để kích hoạt tài khoản", $user);
     }
 
 
@@ -109,12 +104,48 @@ class AuthController extends Controller
     public function profile()
     {
         try {
-            $user = User::select('users.id', 'role_id', 'roles.name as role_name', 'email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
-                ->join('roles', 'roles.id', 'roles.id')
+            $user = User::select('users.id', 'role_id', 'roles.name as role_name','users.name','email', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
+                ->join('roles', 'roles.id', 'role_id')
                 ->find(auth('api')->user()->id);
             return $this->responseCommon(200, 'Tìm thấy thông tin user', $user);
         } catch (\Exception $e) {
             return $this->responseError(500, 'Token không hợp lệ', $e);
+        }
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        try {
+            $user = User::where('id', Auth::user()->id)
+                ->first();
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                // Đường dẫn ảnh
+                $imageDirectory = 'images/users/avatars/';
+                // Xóa ảnh nếu ảnh cũ
+                File::delete($imageDirectory . $user->fileName);
+                // Tạo ngẫu nhiên tên ảnh 12 kí tự
+                $imageName = Str::random(12) . "." . $file->getClientOriginalExtension();
+
+                $file->move($imageDirectory, $imageName);
+
+                $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
+            } else {
+                $path_image = $user->avatar;
+                $imageName = $user->fileName;
+            }
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'birthday' => $request->birthday,
+                'avatar' => $path_image,
+                'fileName' => $imageName,
+            ]);
+            return $this->responseCommon(200, "Cập nhật hồ sơ cá nhân thành công.", $user);
+        } catch (\Exception $e) {
+            return $this->responseError(404, 'Người dùng không tồn tại', []);
         }
     }
 
@@ -147,6 +178,66 @@ class AuthController extends Controller
         }
     }
 
+    // Login with google
+    public function loginUrl()
+    {
+        return response()->json([
+            'url' => Socialite::driver('google')->stateless()->with(['prompt' => 'select_account'])->redirect()->getTargetUrl(), //Lỗi text đỏ không ảnh hưởng
+        ]);
+    }
+
+    public function loginCallback()
+    {
+        $googleUser = Socialite::driver('google')->stateless()->with(['prompt' => 'select_account'])->user(); //Lỗi text đỏ không ảnh hưởng
+
+        $existingUser = User::withTrashed()
+            ->where('email', $googleUser->getEmail())
+            ->first();
+
+        if ($existingUser) {
+            if ($existingUser->status == 'active') {
+                $accessToken = auth('api')->login($existingUser);
+                $refreshToken = $this->createRefreshToken();
+
+                return $this->responseCommon(201, "Đăng nhập thành công", [
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'token_type' => 'bearer',
+                    'expires_in' => config('jwt.ttl') * 60,
+                    'user' => $existingUser,
+                ]);
+            } else {
+                return $this->responseCommon(400, 'Tài khoản của bạn đã bị khóa.', []);
+            }
+        }
+
+        $user = User::create([
+            'name' => $googleUser->getName(),
+            'email' => $googleUser->getEmail(),
+            'avatar' => $googleUser->getAvatar(),
+            'email_verified_at' => now(),
+            'status' => 'active',
+            'role_id' => 3
+        ]);
+
+        SocialAccount::create([
+            'user_id' => $user->id,
+            'social_id' => $googleUser->getId(),
+            'social_provider' => 'google',
+            'social_name' =>  $googleUser->getName(),
+        ]);
+
+        $accessToken = auth('api')->login($user);
+        $refreshToken = $this->createRefreshToken();
+        return $this->responseCommon(201, "Đăng nhập thành công", [
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'bearer',
+            'expires_in' => config('jwt.ttl') * 60,
+            'user' => $user,
+        ]);
+    }
+
 
     public function refresh()
     {
@@ -172,10 +263,10 @@ class AuthController extends Controller
 
     private function respondWithToken($token, $refreshToken)
     {
-        $user = User::select('users.id','users.name','role_id','roles.name as role_name','email','email_verified_at','phone','address','birthday','avatar','fileName','status')
-        ->join('roles','roles.id','role_id')
-        ->where('users.id',auth('api')->user()->id)
-        ->get();
+        $user = User::select('users.id', 'users.name', 'role_id', 'roles.name as role_name', 'email', 'email_verified_at', 'phone', 'address', 'birthday', 'avatar', 'fileName', 'status')
+            ->join('roles', 'roles.id', 'role_id')
+            ->where('users.id', auth('api')->user()->id)
+            ->get();
         return response()->json([
             'access_token' => $token,
             'refresh_token' => $refreshToken,

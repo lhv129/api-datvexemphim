@@ -266,7 +266,8 @@ class TicketController extends Controller
             return [
                 'ticket_id' => $ticket->id,
                 'ticket_code' => $ticket->code,
-                'user' => $ticket->user->name ?? 'Unknown', // Hiển thị tên người dùng
+                'user_id' => $ticket->user->id ?? 'Unknown',
+                'user_name' => $ticket->user->name ?? 'Unknown',
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
                 'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
