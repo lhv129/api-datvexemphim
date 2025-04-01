@@ -137,6 +137,9 @@ class PaymentMethodController extends Controller
 
                 return redirect()->route('ticket.detail', ['id' => $ticket->id]);
             } else {
+                $ticket->ticketDetails()->delete();
+                $ticket->ticketProductDetails()->delete();
+                $ticket->delete();
                 return response()->json(['message' => 'Thanh toán không thành công'], 400);
             }
         }
