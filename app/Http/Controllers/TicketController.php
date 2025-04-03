@@ -58,8 +58,9 @@ class TicketController extends Controller
 
         // Truy vấn danh sách ghế có trong phòng chiếu
         $seats = Seat::whereIn('id', $request->seat_ids)
-            ->where('screen_id', $showtime->screen_id)
-            ->get();
+        ->where('screen_id', $showtime->screen_id)
+        ->where('status', 'available') // Chỉ lấy ghế đang hoạt động
+        ->get();
 
         // Kiểm tra ghế không hợp lệ
         $validSeatIds = $seats->pluck('id')->toArray();
