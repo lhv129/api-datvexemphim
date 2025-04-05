@@ -135,12 +135,18 @@ class PaymentMethodController extends Controller
                 // Gửi email
                 Mail::to($emailData['user_email'])->send(new TicketMail($emailData));
 
-                return redirect()->to(env('FRONTEND_URL') . '/?payment=success');
+                return response()->json([
+                    'status' => 'success',
+                    'redirect_url' => env('FRONTEND_URL') . '/?payment=success'
+                ]);
             } else {
                 $ticket->ticketDetails()->delete();
                 $ticket->ticketProductDetails()->delete();
                 $ticket->delete();
-                return redirect()->to(env('FRONTEND_URL') . '/?payment=failed');
+                return response()->json([
+                    'status' => 'success',
+                    'redirect_url' => env('FRONTEND_URL') . '/?payment=failed'
+                ]);
             }
         }
         return response()->json(['message' => 'Dữ liệu không hợp lệ'], 400);
