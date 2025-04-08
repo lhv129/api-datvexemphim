@@ -35,7 +35,7 @@ class TicketController extends Controller
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
                 'seats' => $seatList,
-                'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
+                'total_amount' => number_format($ticket->total_amount, 0, ',', '.'),
                 'status' => $ticket->status
             ];
         });
@@ -271,7 +271,7 @@ class TicketController extends Controller
                 'user_name' => $ticket->user->name ?? 'Unknown',
                 'movie_name' => $ticket->showtime->movie->title,
                 'showtime' => $ticket->showtime->start_time,
-                'total_amount' => number_format($ticket->total_amount, 0, ',', '.') . ' đ',
+                'total_amount' => number_format($ticket->total_amount, 0, ',', '.'),
                 'status' => $ticket->status,
                 'created_at' => $ticket->created_at->format('Y-m-d H:i:s')
             ];
