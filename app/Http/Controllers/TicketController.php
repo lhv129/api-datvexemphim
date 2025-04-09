@@ -302,6 +302,7 @@ class TicketController extends Controller
 
         // Chuẩn bị dữ liệu phản hồi
         $response = [
+            'ticket_id' => $ticket->id,
             'ticket_code' => $ticket->code,
             'movie_name' => $ticket->showtime->movie->title,
             'showtime' => $ticket->showtime->start_time,
