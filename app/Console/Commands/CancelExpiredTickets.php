@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use App\Models\Ticket;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class CancelExpiredTickets extends Command
 {
@@ -23,6 +25,7 @@ class CancelExpiredTickets extends Command
 
         if ($expiredTickets->isEmpty()) {
             $this->info('Không có vé nào cần hủy.');
+            Log::info('[tickets:cancel-expired] Không có vé nào cần hủy.');
         } else {
             DB::transaction(function () use ($expiredTickets) {
                 foreach ($expiredTickets as $ticket) {
@@ -36,6 +39,7 @@ class CancelExpiredTickets extends Command
             });
 
             $this->info('Đã hủy ' . $expiredTickets->count() . ' vé và giải phóng ghế.');
+            Log::info('[tickets:cancel-expired] Đã hủy ' . $expiredTickets->count() . ' vé và giải phóng ghế.');
         }
 
         // Xử lý vé hết hạn chiếu từ bảng showtimes
@@ -45,13 +49,20 @@ class CancelExpiredTickets extends Command
 
         if ($expiredShowtimeTickets->isEmpty()) {
             $this->info('Không có vé nào hết hạn chiếu.');
+            Log::info('[tickets:cancel-expired] Không có vé nào hết hạn chiếu.');
         } else {
             foreach ($expiredShowtimeTickets as $ticket) {
                 // Cập nhật trạng thái vé thành 'expired'
                 $ticket->status = 'expired';
                 $ticket->save();
                 $this->info('Vé với ID ' . $ticket->id . ' đã hết hạn và đã được chuyển trạng thái sang expired.');
+                Log::info('[tickets:cancel-expired] Vé ID ' . $ticket->id . ' chuyển sang expired.');
             }
         }
+        // Gửi thông báo đến Slack sau khi xử lý xong
+        $message = '[🎟️ FilmGO] Đã chạy lệnh tickets:cancel-expired lúc ' . now();
+        Http::post(env('SLACK_WEBHOOK_URL'), [
+            'text' => $message,
+        ]);
     }
 }
