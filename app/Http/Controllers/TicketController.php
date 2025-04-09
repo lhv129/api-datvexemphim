@@ -74,6 +74,7 @@ class TicketController extends Controller
         $reservedSeats = DB::table('ticket_details')
             ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
             ->where('tickets.showtime_id', $request->showtime_id)
+            ->where('tickets.status', 'paid')
             ->whereIn('ticket_details.seat_id', $request->seat_ids)
             ->pluck('ticket_details.seat_id')
             ->toArray();
