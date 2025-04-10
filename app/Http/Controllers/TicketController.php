@@ -358,7 +358,18 @@ class TicketController extends Controller
             ], 404);
         }
 
-        return redirect()->route('adminShow', ['id' => $ticket->id]);
+        if ($ticket->status === 'used') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Vé đã được sử dụng!'
+            ], 400);
+        }
+
+        // Cập nhật trạng thái vé
+        $ticket->update(['status' => 'used']);
+
+        return redirect()->route('adminShow', ['id' => $ticket->id])
+            ->with('success', 'Vé đã được quét và cập nhật trạng thái thành công!');
 
     }
 
