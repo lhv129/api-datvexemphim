@@ -18,6 +18,36 @@ use App\Http\Requests\UpdateMovieRequest;
 
 class MovieController extends Controller
 {
+    public function index()
+    {
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->get();
+
+        $dataMovie = $movies->map(function ($movie) {
+            return [
+                'id' => $movie->id,
+                'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
+                    ->join('genres', 'genres.id', 'movie_genres.genre_id')
+                    ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
+                    ->get(),
+                'title' => $movie->title,
+                'description' => $movie->description,
+                'poster' => $movie->poster,
+                'fileName' => $movie->fileName,
+                'trailer' => $movie->trailer,
+                'duration' => $movie->duration,
+                'rating' => $movie->rating,
+                'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
+            ];
+        });
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
+    }
+
     public function moviesShowing()
     {
         $today = now()->toDateString();
@@ -53,20 +83,21 @@ class MovieController extends Controller
 
     public function moviesUpcoming()
     {
-        $futureTime = Carbon::now()->addMonths(1)->toDateString();
+        $today = now()->toDateString();
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
-            ->where('release_date', '>=', $futureTime)
+            ->where('release_date', '>', $today)
+            ->orderBy('release_date', 'asc') // Sắp xếp theo ngày phát hành tăng dần (tùy chọn)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
             return [
                 'id' => $movie->id,
                 'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
-                    ->join('genres', 'genres.id', 'movie_genres.genre_id')
+                    ->join('genres', 'genres.id', '=', 'movie_genres.genre_id')
                     ->where('movie_genres.movie_id', $movie->id)
                     ->get(),
                 'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
-                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->join('actors', 'actors.id', '=', 'actor_movies.actor_id')
                     ->where('actor_movies.movie_id', $movie->id)
                     ->get(),
                 'title' => $movie->title,
@@ -80,7 +111,8 @@ class MovieController extends Controller
                 'end_date' => $movie->end_date,
             ];
         });
-        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
+
+        return $this->responseCommon(200, "Lấy danh sách phim sắp chiếu thành công", $dataMovie);
     }
 
     public function searchMovie(Request $request)

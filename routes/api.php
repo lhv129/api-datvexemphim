@@ -167,6 +167,7 @@ Route::get('products', [ProductController::class, 'index']);
 Route::get('products/show/{id}', [ProductController::class, 'show']);
 
 // Api Movies
+Route::get('movies', [MovieController::class, 'index']);
 Route::get('moviesShowing', [MovieController::class, 'moviesShowing']);
 Route::get('moviesUpcoming', [MovieController::class, 'moviesUpcoming']);
 Route::get('movies/show/{id}', [MovieController::class, 'show']);
