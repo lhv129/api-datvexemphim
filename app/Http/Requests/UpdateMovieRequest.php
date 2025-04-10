@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMovieRequest extends FormRequest
@@ -21,6 +22,11 @@ class UpdateMovieRequest extends FormRequest
      */
     public function rules(): array
     {
+        //Lấy ra thời gian hiện tại
+        $now = Carbon::now();
+        // Thời gian hiện tại + 3 tháng
+        $futureTime = Carbon::now()->addMonths(2);
+
         return [
             'title' => 'required|min:5|max:255|unique:movies,title,' . $this->id,
             'description' => 'required|min:5|max:500',
@@ -28,7 +34,8 @@ class UpdateMovieRequest extends FormRequest
             'trailer' => 'required',
             'duration' => 'required',
             'rating' => 'required',
-            'release_date' => 'required',
+            'release_date' => 'required|after:' . $now->toDateString() . '|before:' . $futureTime->toDateString(),
+            'end_date' => 'required|after:' . Carbon::parse($this->release_date)->addDays(13)->toDateString() . '|before:' . Carbon::parse($this->release_date)->addDays(31)->toDateString(),
             'genres' => 'required|array ',
             'actors' => 'required|array ',
         ];
@@ -46,6 +53,10 @@ class UpdateMovieRequest extends FormRequest
             'mimes' => 'Bạn chỉ được nhập file ảnh có đuôi jpeg,jpg,png',
             'genres.array' => 'Thể loại phim phải là 1 mảng array',
             'actors.array' => 'Diễn viên phim phải là 1 mảng array',
+            'release_date.after' => 'Ngày công chiếu phải sau ngày hôm nay',
+            'release_date.before' => 'Ngày công chiếu không được vượt quá thời điểm 2 tháng kể từ bây giờ.',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày khởi chiếu 2 tuần',
+            'end_date.before' => 'Ngày kết thúc không được quá ngày khởi chiếu 1 tháng',
         ];
     }
 }

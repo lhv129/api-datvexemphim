@@ -19,6 +19,7 @@ class Movie extends Model
         'duration',
         'rating',
         'release_date',
+        'end_date',
         'deleted_at',
         'fileName'
     ];
