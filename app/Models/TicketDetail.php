@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TicketDetail extends Model
 {
     use HasFactory;
+
+    use SoftDeletes;
     protected $fillable = [
         'ticket_id',
         'seat_id',
@@ -21,6 +24,6 @@ class TicketDetail extends Model
 
     public function seat()
     {
-        return $this->belongsTo(Seat::class);
+        return $this->belongsTo(Seat::class)->withTrashed();
     }
 }
