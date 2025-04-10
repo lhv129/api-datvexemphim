@@ -107,28 +107,6 @@ class ShowtimeController extends Controller
 
             $validatedData = $request->validated();
 
-            // Kiểm tra suất chiếu trùng lặp
-            $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-            ->whereDate('start_time', $validatedData['date'])
-            ->where('id', '!=', $id)
-            ->where(function ($query) use ($validatedData) {
-                $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']])
-                    ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']])
-                    ->orWhere(function ($query) use ($validatedData) {
-                        $query->where('start_time', '<=', $validatedData['start_time'])
-                                ->where('end_time', '>=', $validatedData['end_time']);
-                    });
-            })
-            ->exists();
-
-            if ($exists) {
-                return response()->json([
-                    'status' => 400,
-                    'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
-                    'data' => $validatedData
-                ], 400);
-            }
-
             $showtime->update($validatedData);
 
             return $this->responseCommon(200, "Cập nhật thành công.", $showtime);
