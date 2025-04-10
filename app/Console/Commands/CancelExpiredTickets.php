@@ -29,11 +29,8 @@ class CancelExpiredTickets extends Command
         } else {
             DB::transaction(function () use ($expiredTickets) {
                 foreach ($expiredTickets as $ticket) {
-                    // Xóa các chi tiết vé
-                    $ticket->ticketDetails()->delete();
-                    $ticket->ticketProductDetails()->delete();
-
-                    // Xóa vé
+                    $ticket->ticketDetails->each->delete();
+                    $ticket->ticketProductDetails->each->delete();
                     $ticket->delete();
                 }
             });
