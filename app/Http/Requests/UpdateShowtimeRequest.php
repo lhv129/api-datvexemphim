@@ -96,6 +96,7 @@ class UpdateShowtimeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $movie = Movie::findOrFail($this->movie_id);
         return [
             'movie_id' => [
                 'required',
@@ -107,12 +108,13 @@ class UpdateShowtimeRequest extends FormRequest
             ],
             'start_time' => 'required|date_format:Y-m-d H:i:s',
             'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
-            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'date' => 'required|date_format:Y-m-d|after' . $movie->release_date. '|before:' . $movie->date ,
         ];
     }
 
     public function messages()
     {
+        $movie = Movie::findOrFail($this->movie_id);
         return [
             'movie_id.required' => 'Vui lòng chọn phim.',
             'movie_id.exists' => 'Phim không tồn tại hoặc đã bị xóa.',
@@ -125,7 +127,8 @@ class UpdateShowtimeRequest extends FormRequest
             'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
             'date.required' => 'Vui lòng chọn ngày chiếu.',
             'date.date_format' => 'Ngày chiếu phải đúng định dạng (YYYY-MM-DD).',
-            'date.after_or_equal' => 'Ngày chiếu phải là hôm nay hoặc sau hôm nay.',
+            'date.after' => 'Ngày chiếu phải sau ngày khởi chiếu của phim ' . $movie->release_date ,
+            'date.before' => 'Phim đã quá thời gian chiếu của hệ thống rạp.'
         ];
     }
 }

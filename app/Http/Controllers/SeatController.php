@@ -44,7 +44,9 @@ class SeatController extends Controller
         // Lấy danh sách ghế đã đặt kèm ticket_id
         $reservedSeats = DB::table('ticket_details')
             ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+            ->join('seats','ticket_details.seat_id','=','seats.id' )
             ->where('tickets.showtime_id', $request->showtime_id)
+            ->where('seats.status','available')
             ->where('tickets.status','paid')
             ->select('ticket_details.seat_id', 'tickets.id as ticket_id')
             ->get();
