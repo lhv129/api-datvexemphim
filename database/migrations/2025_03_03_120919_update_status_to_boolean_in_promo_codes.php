@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('promo_codes', function (Blueprint $table) {
-            //
+            $table->dropColumn('status');
+        });
+
+        Schema::table('promo_codes', function (Blueprint $table) {
+            $table->boolean('status')->default(true);
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('promo_codes', function (Blueprint $table) {
-            //
-        });
+
     }
 };

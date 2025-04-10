@@ -6,6 +6,7 @@ use App\Http\Requests\UpdateShowtimeRequest;
 use App\Models\Seat;
 use App\Models\SeatShowtime;
 use App\Models\Showtime;
+use App\Models\Ticket;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -61,43 +62,20 @@ class ShowtimeController extends Controller
         return $this->responseCommon(200, "Lấy Danh Sách Thành Công", $showtimes);
     }
 
+
     public function store(StoreShowtimeRequest $request) {
         try {
             $validatedData = $request->validated();
 
-            // Kiểm tra suất chiếu trùng lặp
-            $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-                ->whereDate('start_time', $validatedData['date'])
-                ->where(function ($query) use ($validatedData) {
-                    $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']])
-                          ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']])
-                          ->orWhere(function ($query) use ($validatedData) {
-                              $query->where('start_time', '<=', $validatedData['start_time'])
-                                    ->where('end_time', '>=', $validatedData['end_time']);
-                          });
-                })
-                ->exists();
-
-            if ($exists) {
-                return response()->json([
-                    'status' => 400,
-                    'message' => 'Thời gian bắt đầu bị trùng với suất chiếu khác.',
-                    'data' => $validatedData
-                ], 400);
-            }
-
-            // Tạo showtime mới
             $showtime = Showtime::create($validatedData);
 
-            // Lấy danh sách ghế thuộc screen_id
+            // Tạo ghế vào seat_showtimes
             $seats = Seat::where('screen_id', $validatedData['screen_id'])->get();
-
-            // Lưu vào bảng seat_showtimes
             foreach ($seats as $seat) {
                 SeatShowtime::create([
                     'seat_id' => $seat->id,
                     'showtime_id' => $showtime->id,
-                    'status' => 'available' // Trạng thái ghế ban đầu
+                    'status' => 'available',
                 ]);
             }
 
@@ -131,13 +109,17 @@ class ShowtimeController extends Controller
 
             // Kiểm tra suất chiếu trùng lặp
             $exists = Showtime::where('screen_id', $validatedData['screen_id'])
-                ->whereDate('start_time', $validatedData['date'])
-                ->where(function ($query) use ($validatedData, $id) {
-                    $query->where('start_time', '<=', $validatedData['start_time'])
-                        ->where('end_time', '>=', $validatedData['start_time'])
-                        ->where('id', '!=', $id); // Loại trừ suất chiếu hiện tại
-                })
-                ->exists();
+            ->whereDate('start_time', $validatedData['date'])
+            ->where('id', '!=', $id)
+            ->where(function ($query) use ($validatedData) {
+                $query->whereBetween('start_time', [$validatedData['start_time'], $validatedData['end_time']])
+                    ->orWhereBetween('end_time', [$validatedData['start_time'], $validatedData['end_time']])
+                    ->orWhere(function ($query) use ($validatedData) {
+                        $query->where('start_time', '<=', $validatedData['start_time'])
+                                ->where('end_time', '>=', $validatedData['end_time']);
+                    });
+            })
+            ->exists();
 
             if ($exists) {
                 return response()->json([
@@ -184,6 +166,14 @@ class ShowtimeController extends Controller
 
             if (!$showtime) {
                 return $this->responseCommon(404, "Giờ Chiếu không tồn tại hoặc đã bị xóa.", []);
+            }
+
+            //Ktr Có user nào đặt vé chưa
+            $hasBooked = Ticket::where('showtime_id',$id)
+            ->where('status',['paid','used'])
+            ->exists();
+            if($hasBooked) {
+                return $this->responseCommon(400,'Không thể xóa xuất chiếu đã có người đặt hoặc sử dụng vé.',[]);
             }
 
             SeatShowtime::where('showtime_id', $id)->delete();
