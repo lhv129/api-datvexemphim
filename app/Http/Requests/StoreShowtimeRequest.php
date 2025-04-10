@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Movie;
+use App\Models\Showtime;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
@@ -35,6 +37,58 @@ class StoreShowtimeRequest extends FormRequest
             ]);
         }
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $screenId = $this->input('screen_id');
+            $startTime = Carbon::parse($this->input('start_time'));
+            $endTime = Carbon::parse($this->input('end_time'));
+            $date = $this->input('date');
+            $movieId = $this->input('movie_id');
+
+
+            $showtimeDuration  = $startTime->diffInMinutes($endTime);
+
+            $movie = Movie::find($movieId);
+            if($movie) {
+                $movieDuration = $movie->duration;
+                if($showtimeDuration < $movieDuration) {
+                    $validator->errors()->add('end_time','Thời gian suất chiếu phải lớn hơn hoặc bằng thời lượng phim.');
+                    return;
+                }
+            }
+
+            // Lấy danh sách suất chiếu đã có trong cùng screen và cùng ngày
+            $showtimes = Showtime::where('screen_id', $screenId)
+                ->whereDate('start_time', $date)
+                ->get();
+
+            foreach ($showtimes as $showtime) {
+                $existingStart = Carbon::parse($showtime->start_time);
+                $existingEnd = Carbon::parse($showtime->end_time);
+
+                // Nếu suất mới giao nhau với suất cũ (bị trùng)
+                if (
+                    $startTime < $existingEnd &&
+                    $endTime > $existingStart
+                ) {
+                    $validator->errors()->add('start_time', 'Suất chiếu bị trùng thời gian với suất chiếu khác.');
+                    break;
+                }
+
+                // Nếu khoảng cách giữa các suất < 15 phút
+                if (
+                    abs($startTime->diffInMinutes($existingEnd)) < 15 ||
+                    abs($endTime->diffInMinutes($existingStart)) < 15
+                ) {
+                    $validator->errors()->add('start_time', 'Suất chiếu phải cách suất chiếu khác ít nhất 15 phút.');
+                    break;
+                }
+            }
+        });
+    }
+
 
     /**
      * Get the validation rules that apply to the request.
