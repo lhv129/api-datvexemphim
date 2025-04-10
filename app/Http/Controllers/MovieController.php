@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Actor;
 use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\Review;
 use App\Models\Actor_movie;
-use App\Models\Movie_actor;
 use App\Models\Movie_genre;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
@@ -19,9 +18,12 @@ use App\Http\Requests\UpdateMovieRequest;
 
 class MovieController extends Controller
 {
-    public function index()
+    public function moviesShowing()
     {
-        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date')
+        $today = now()->toDateString();
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('release_date', '<=', $today)
+            ->where('end_date', '>=', $today)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -43,6 +45,39 @@ class MovieController extends Controller
                 'duration' => $movie->duration,
                 'rating' => $movie->rating,
                 'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
+            ];
+        });
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
+    }
+
+    public function moviesUpcoming()
+    {
+        $futureTime = Carbon::now()->addMonths(1)->toDateString();
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('release_date', '>=', $futureTime)
+            ->get();
+
+        $dataMovie = $movies->map(function ($movie) {
+            return [
+                'id' => $movie->id,
+                'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
+                    ->join('genres', 'genres.id', 'movie_genres.genre_id')
+                    ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
+                    ->get(),
+                'title' => $movie->title,
+                'description' => $movie->description,
+                'poster' => $movie->poster,
+                'fileName' => $movie->fileName,
+                'trailer' => $movie->trailer,
+                'duration' => $movie->duration,
+                'rating' => $movie->rating,
+                'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
             ];
         });
         return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
@@ -50,11 +85,14 @@ class MovieController extends Controller
 
     public function searchMovie(Request $request)
     {
+        $today = now()->toDateString();
+
         $name = $request->name;
         if (!$name) {
             return $this->responseError(404, 'Vui lòng nhập tên phim để tìm kiếm', []);
         }
         $movies = Movie::where('title', 'LIKE', "%$name%")
+            ->where('end_date', '>=', $today)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -104,7 +142,6 @@ class MovieController extends Controller
 
                 $file->move($imageDirectory, $imageName);
                 $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-
                 $movie = Movie::create([
                     'title' => $request->title,
                     'description' => $request->description,
@@ -114,6 +151,7 @@ class MovieController extends Controller
                     'duration' => $request->duration,
                     'rating' => $request->rating,
                     'release_date' => $request->release_date,
+                    'end_date' => $request->end_date,
                 ]);
                 $movie['genres'] = $request->genres;
                 $movie['actors'] = $request->actors;
@@ -178,6 +216,7 @@ class MovieController extends Controller
                 'duration' => $request->duration,
                 'rating' => $request->rating,
                 'release_date' => $request->release_date,
+                'end_date' => $request->end_date,
             ]);
             $movie['genres'] = $request->genres;
             $movie['actors'] = $request->actors;
