@@ -25,7 +25,7 @@ class SeatController extends Controller
         if(!$screen) {
             return $this->responseCommon(404,"Phòng không tồn tại.",[]);
         }
-        $seats = Seat::select('id', 'row','number','type','price','status','screen_id')
+        $seats = Seat::select('id', 'row','number','type','seat_code','price','status','screen_id')
             ->with(['screen:id,name'])
             ->where('screen_id',$request->screen_id)
             ->get();
@@ -79,7 +79,7 @@ class SeatController extends Controller
             $seats = [];
 
             // Kiểm tra nếu là couple thì số ghế phải là số cặp
-            if ($type === 'couple') {
+            if ($type === 'ghế đôi') {
                 for ($i = 0; $i < $couple_count; $i++) {
                     $seat_number_1 = ($i * 2) + 1;
                     $seat_number_2 = $seat_number_1 + 1;
