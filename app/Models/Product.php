@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Product extends Model
 {
     use HasFactory;
-    // use SoftDeletes;
-    // protected $dates = ['deleted_at'];
+    use SoftDeletes;
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'code',
