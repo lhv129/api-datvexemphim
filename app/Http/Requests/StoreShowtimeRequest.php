@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Movie;
+use App\Models\Showtime;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
@@ -36,11 +38,64 @@ class StoreShowtimeRequest extends FormRequest
         }
     }
 
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $screenId = $this->input('screen_id');
+            $startTime = Carbon::parse($this->input('start_time'));
+            $endTime = Carbon::parse($this->input('end_time'));
+            $date = $this->input('date');
+            $movieId = $this->input('movie_id');
+
+
+            $showtimeDuration  = $startTime->diffInMinutes($endTime);
+
+            $movie = Movie::find($movieId);
+            if($movie) {
+                $movieDuration = $movie->duration;
+                if($showtimeDuration < $movieDuration) {
+                    $validator->errors()->add('end_time','Thời gian suất chiếu phải lớn hơn hoặc bằng thời lượng phim.');
+                    return;
+                }
+            }
+
+            // Lấy danh sách suất chiếu đã có trong cùng screen và cùng ngày
+            $showtimes = Showtime::where('screen_id', $screenId)
+                ->whereDate('start_time', $date)
+                ->get();
+
+            foreach ($showtimes as $showtime) {
+                $existingStart = Carbon::parse($showtime->start_time);
+                $existingEnd = Carbon::parse($showtime->end_time);
+
+                // Nếu suất mới giao nhau với suất cũ (bị trùng)
+                if (
+                    $startTime < $existingEnd &&
+                    $endTime > $existingStart
+                ) {
+                    $validator->errors()->add('start_time', 'Suất chiếu bị trùng thời gian với suất chiếu khác.');
+                    break;
+                }
+
+                // Nếu khoảng cách giữa các suất < 15 phút
+                if (
+                    abs($startTime->diffInMinutes($existingEnd)) < 15 ||
+                    abs($endTime->diffInMinutes($existingStart)) < 15
+                ) {
+                    $validator->errors()->add('start_time', 'Suất chiếu phải cách suất chiếu khác ít nhất 15 phút.');
+                    break;
+                }
+            }
+        });
+    }
+
+
     /**
      * Get the validation rules that apply to the request.
      */
     public function rules(): array
     {
+        $movie = Movie::findOrFail($this->movie_id);
         return [
             'movie_id' => [
                 'required',
@@ -52,7 +107,7 @@ class StoreShowtimeRequest extends FormRequest
             ],
             'start_time' => 'required|date_format:Y-m-d H:i:s',
             'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
-            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'date' => 'required|date_format:Y-m-d|after:' . Carbon::parse($movie->release_date)->subDays(1)->toString() . '|before:' . $movie->end_date,
         ];
     }
 
@@ -61,6 +116,7 @@ class StoreShowtimeRequest extends FormRequest
      */
     public function messages()
     {
+        $movie = Movie::findOrFail($this->movie_id);
         return [
             'movie_id.required' => 'Vui lòng chọn phim.',
             'movie_id.exists' => 'Phim không tồn tại.',
@@ -73,7 +129,8 @@ class StoreShowtimeRequest extends FormRequest
             'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
             'date.required' => 'Vui lòng chọn ngày chiếu.',
             'date.date_format' => 'Ngày chiếu phải đúng định dạng (Y-m-d).',
-            'date.after_or_equal' => 'Ngày chiếu phải là hôm nay hoặc sau hôm nay.',
+            'date.after' => 'Ngày chiếu phải sau ngày khởi chiếu của phim, phim này được công chiếu vào  ' . $movie->release_date ,
+            'date.before' => 'Phim đã quá thời gian chiếu của hệ thống rạp.'
         ];
     }
 }

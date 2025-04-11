@@ -30,7 +30,7 @@ class StorePromocodeRequest extends FormRequest
                 })
             ],
             'description' => 'required|string|max:255',
-            'discount_amount' => 'required|numeric|min:0',
+            'discount_amount' => 'required|numeric|min:5000|max:20000',
             'start_date' => 'required|date|after_or_equal:today', // Ngày bắt đầu phải là ngày hôm nay hoặc sau
             'end_date' => 'required|date|after:start_date', // Ngày kết thúc phải sau ngày bắt đầu
         ];
@@ -44,7 +44,8 @@ class StorePromocodeRequest extends FormRequest
             'description.string' => 'Mô tả phải là một chuỗi văn bản.',
             'description.max' => 'Mô tả không được vượt quá 255 ký tự.',
             'discount_amount.numeric' => 'Số tiền giảm giá phải là một số.',
-            'discount_amount.min' => 'Số tiền giảm giá không được nhỏ hơn 0.',
+            'discount_amount.max' => 'Số tiền giảm giá không được vượt quá 20000VND.',
+            'discount_amount.min' => 'Số tiền giảm giá phải từ 5000VND trở lên.',
             'start_date.after_or_equal' => 'Ngày bắt đầu phải là hôm nay hoặc sau.',
             'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
             'end_date.date' => 'Ngày kết thúc phải là một ngày hợp lệ.',

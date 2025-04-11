@@ -34,7 +34,9 @@ class User extends Authenticatable implements JWTSubject
         'avatar',
         'status',
         'verification_token',
-        'fileName'
+        'email_verified_at',
+        'fileName',
+        'deleted_at',
     ];
 
     /**

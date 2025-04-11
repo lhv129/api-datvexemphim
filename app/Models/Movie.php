@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Movie extends Model
 {
     use HasFactory;
-    // use SoftDeletes;
-    // protected $dates = ['deleted_at'];
+    use SoftDeletes;
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'title',
@@ -19,6 +20,7 @@ class Movie extends Model
         'duration',
         'rating',
         'release_date',
+        'end_date',
         'deleted_at',
         'fileName'
     ];

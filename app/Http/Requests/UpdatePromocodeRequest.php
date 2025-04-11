@@ -29,7 +29,7 @@ class UpdatePromocodeRequest extends FormRequest
                 Rule::unique('promo_codes')->ignore($id)->whereNull('deleted_at')
             ],
             'description' => 'required|string|max:255',
-            'discount_amount' => 'required|numeric|min:0',
+            'discount_amount' => 'required|numeric|min:5000|max:20000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'status' => 'required|in:active,inactive',

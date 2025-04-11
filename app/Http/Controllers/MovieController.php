@@ -2,26 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Actor;
 use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\Review;
 use App\Models\Actor_movie;
-use App\Models\Movie_actor;
 use App\Models\Movie_genre;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
-
+use App\Models\Showtime;
 
 class MovieController extends Controller
 {
     public function index()
     {
-        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date')
+        $today = now()->toDateString();
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('end_date', '>=', $today)
+            ->where('deleted_at', null)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -43,18 +45,19 @@ class MovieController extends Controller
                 'duration' => $movie->duration,
                 'rating' => $movie->rating,
                 'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
             ];
         });
         return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
     }
 
-    public function searchMovie(Request $request)
+    public function moviesShowing()
     {
-        $name = $request->name;
-        if (!$name) {
-            return $this->responseError(404, 'Vui lòng nhập tên phim để tìm kiếm', []);
-        }
-        $movies = Movie::where('title', 'LIKE', "%$name%")
+        $today = now()->toDateString();
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('release_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->where('deleted_at', null)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -76,6 +79,79 @@ class MovieController extends Controller
                 'duration' => $movie->duration,
                 'rating' => $movie->rating,
                 'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
+            ];
+        });
+        return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
+    }
+
+    public function moviesUpcoming()
+    {
+        $today = now()->toDateString();
+        $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('release_date', '>', $today)
+            ->where('deleted_at', null)
+            ->orderBy('release_date', 'asc') // Sắp xếp theo ngày phát hành tăng dần (tùy chọn)
+            ->get();
+
+        $dataMovie = $movies->map(function ($movie) {
+            return [
+                'id' => $movie->id,
+                'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
+                    ->join('genres', 'genres.id', '=', 'movie_genres.genre_id')
+                    ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', '=', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
+                    ->get(),
+                'title' => $movie->title,
+                'description' => $movie->description,
+                'poster' => $movie->poster,
+                'fileName' => $movie->fileName,
+                'trailer' => $movie->trailer,
+                'duration' => $movie->duration,
+                'rating' => $movie->rating,
+                'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
+            ];
+        });
+
+        return $this->responseCommon(200, "Lấy danh sách phim sắp chiếu thành công", $dataMovie);
+    }
+
+    public function searchMovie(Request $request)
+    {
+        $today = now()->toDateString();
+
+        $name = $request->name;
+        if (!$name) {
+            return $this->responseError(404, 'Vui lòng nhập tên phim để tìm kiếm', []);
+        }
+        $movies = Movie::where('title', 'LIKE', "%$name%")
+            ->where('end_date', '>=', $today)
+            ->get();
+
+        $dataMovie = $movies->map(function ($movie) {
+            return [
+                'id' => $movie->id,
+                'genres' => Movie_genre::select('movie_genres.genre_id', 'genres.name')
+                    ->join('genres', 'genres.id', 'movie_genres.genre_id')
+                    ->where('movie_genres.movie_id', $movie->id)
+                    ->get(),
+                'actors' => Actor_movie::select('actor_movies.actor_id', 'actors.name')
+                    ->join('actors', 'actors.id', 'actor_movies.actor_id')
+                    ->where('actor_movies.movie_id', $movie->id)
+                    ->get(),
+                'title' => $movie->title,
+                'description' => $movie->description,
+                'poster' => $movie->poster,
+                'fileName' => $movie->fileName,
+                'trailer' => $movie->trailer,
+                'duration' => $movie->duration,
+                'rating' => $movie->rating,
+                'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
             ];
         });
         return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
@@ -104,7 +180,6 @@ class MovieController extends Controller
 
                 $file->move($imageDirectory, $imageName);
                 $path_image   = 'http://filmgo.io.vn/' . ($imageDirectory . $imageName);
-
                 $movie = Movie::create([
                     'title' => $request->title,
                     'description' => $request->description,
@@ -114,6 +189,7 @@ class MovieController extends Controller
                     'duration' => $request->duration,
                     'rating' => $request->rating,
                     'release_date' => $request->release_date,
+                    'end_date' => $request->end_date,
                 ]);
                 $movie['genres'] = $request->genres;
                 $movie['actors'] = $request->actors;
@@ -178,6 +254,7 @@ class MovieController extends Controller
                 'duration' => $request->duration,
                 'rating' => $request->rating,
                 'release_date' => $request->release_date,
+                'end_date' => $request->end_date,
             ]);
             $movie['genres'] = $request->genres;
             $movie['actors'] = $request->actors;
@@ -231,24 +308,37 @@ class MovieController extends Controller
     {
         try {
             $movie = Movie::findOrFail($id);
+            $today = now()->toDateString();
 
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/movies/';
-            // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
-            File::delete($imageDirectory . $movie->fileName);
+            //Kiểm tra xem xuất chiếu đó đã hết thời gian công chiếu chưa
+            if ($movie->end_date > $today) {
 
-            //Xóa luôn những thể loại phim đó.
-            $movie_genres = Movie_genre::where('movie_id', $id)->delete();
+                // Lấy ra các suất chiếu của phim đó
+                $exitstingShowtime = Showtime::select('showtimes.*')
+                    ->where('date', '>=', $today)
+                    ->where('movie_id', $movie->id)
+                    ->get();
 
-            //Xóa luôn những diễn viên phim đó.
-            $actor_movies = Actor_movie::where('movie_id', $id)->delete();
-
-            //Xóa luôn bình luận về phim đó.
-            $reviews = Review::where('movie_id', $id)->delete();
-
-            $movie->delete();
-
-            return $this->responseCommon(200, "Xóa phim thành công.", []);
+                if ($exitstingShowtime->count() > 0) {
+                    //Nếu phim đó còn suất chiếu của ngày hôm nay và những ngày sắp tới thì không được xóa
+                    return $this->responseCommon(400, "Phim vẫn đang được chiếu ở những suất chiếu sau, không được phép xóa.", $exitstingShowtime);
+                } else {
+                    // Xóa mềm những xuất chiếu liên quan tới phim đó
+                    Showtime::where('movie_id', $movie->id)
+                        ->update(['deleted_at' => now()]);
+                    // Xóa mềm phim
+                    $movie->delete();
+                    return $this->responseCommon(200, "Xóa phim thành công.", []);
+                }
+            } elseif ($movie->end_date < $today) {
+                // Phim hết thời gian công chiếu thì mặc định xóa được
+                // // Đường dẫn ảnh
+                // $imageDirectory = 'images/movies/';
+                // // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
+                // File::delete($imageDirectory . $movie->fileName);
+                $movie->delete();
+                return $this->responseCommon(200, "Xóa phim thành công.", []);
+            }
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
         }
