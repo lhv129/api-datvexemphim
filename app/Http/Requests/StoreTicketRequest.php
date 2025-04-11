@@ -23,13 +23,13 @@ class StoreTicketRequest extends FormRequest
     {
         return [
             'showtime_id' => 'required|integer|exists:showtimes,id',
-            'seat_ids' => 'required|array',
+            'seat_ids' => 'required|array|max:8',
             'seat_ids.*' => 'integer|exists:seats,id',
             'payment_method_id' => 'required|integer',
             'promo_code_id' => 'nullable|integer|exists:promo_codes,id',
             'products' => 'nullable|array',
             'products.*.product_id' => 'integer|exists:products,id',
-            'products.*.quantity' => 'integer|min:1'
+            'products.*.quantity' => 'integer|min:1|max:8'
         ];
     }
     public function messages()
@@ -39,7 +39,7 @@ class StoreTicketRequest extends FormRequest
             'integer' => ':attribute phải là số nguyên.',
             'exists' => ':attribute không tồn tại trong hệ thống.',
             'array' => ':attribute phải là một mảng.',
-            'min' => ':attribute phải lớn hơn hoặc bằng :min.'
+            'max' => ':attribute không được lớn hơn :max.',
         ];
     }
 }

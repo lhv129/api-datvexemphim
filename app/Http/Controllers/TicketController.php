@@ -10,6 +10,7 @@ use App\Models\Showtime;
 use App\Models\Ticket;
 use App\Models\TicketDetail;
 use App\Models\TicketProductDetail;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -56,11 +57,17 @@ class TicketController extends Controller
             return $this->responseError(400, 'Suất chiếu đã kết thúc, không thể đặt vé.');
         }
 
+        $startTime = Carbon::parse($showtime->start_time);
+
+        if (now()->greaterThan($startTime->addMinutes(30))) {
+            return $this->responseError(400, 'Suất chiếu đã bắt đầu hơn 30 phút. Không thể đặt vé.');
+        }
+
         // Truy vấn danh sách ghế có trong phòng chiếu
         $seats = Seat::whereIn('id', $request->seat_ids)
-        ->where('screen_id', $showtime->screen_id)
-        ->where('status', 'available') // Chỉ lấy ghế đang hoạt động
-        ->get();
+            ->where('screen_id', $showtime->screen_id)
+            ->where('status', 'available') // Chỉ lấy ghế đang hoạt động
+            ->get();
 
         // Kiểm tra ghế không hợp lệ
         $validSeatIds = $seats->pluck('id')->toArray();
@@ -82,6 +89,59 @@ class TicketController extends Controller
         if (!empty($reservedSeats)) {
             return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
         }
+        //check ghế đôi
+        foreach ($seats as $seat) {
+            // Chỉ kiểm tra nếu là ghế đôi
+            if ($seat->type === 'Ghế đôi') {
+                // Xác định số ghế còn lại trong cặp
+                if ($seat->number % 2 == 0) {
+                    $pairNumber = $seat->number - 1; // chẵn → lẻ trước
+                } else {
+                    $pairNumber = $seat->number + 1; // lẻ → chẵn sau
+                }
+
+                // Tìm ghế đôi còn lại
+                $pairedSeat = Seat::where('row', $seat->row)
+                    ->where('number', $pairNumber)
+                    ->where('screen_id', $seat->screen_id)
+                    ->where('status', 'available')
+                    ->first();
+
+                // Nếu ghế đôi còn lại tồn tại mà không nằm trong danh sách ghế được chọn thì báo lỗi
+                if ($pairedSeat && !in_array($pairedSeat->id, $request->seat_ids)) {
+                    return $this->responseError(
+                        400,
+                        "Ghế {$seat->row}{$seat->number} là ghế đôi, bạn phải đặt kèm với ghế {$pairedSeat->row}{$pairedSeat->number}."
+                    );
+                }
+            }
+        }
+
+        //check 2 ghế cách nhau
+        $groupedSeats = $seats->groupBy('row');
+
+        foreach ($groupedSeats as $row => $rowSeats) {
+            $selectedNumbers = $rowSeats->pluck('number')->sort()->values()->toArray();
+
+            if (count($selectedNumbers) > 1) {
+                $first = $selectedNumbers[0];
+                $last = end($selectedNumbers);
+
+                // Chỉ kiểm tra nếu khoảng cách giữa ghế đầu và cuối nhỏ hơn hoặc bằng 2
+                if (($last - $first) <= 2) {
+                    $expected = range($first, $last);
+
+                    if ($selectedNumbers !== $expected) {
+                        $missing = array_diff($expected, $selectedNumbers);
+                        $missingText = implode(', ', array_map(fn($num) => $row . $num, $missing));
+
+                        return $this->responseError(400, "Không được để trống ghế ở giữa: $missingText.");
+                    }
+                }
+            }
+        }
+
+
 
         // $seats = Seat::whereIn('id', $request->seat_ids)->get();
         // if ($seats->count() != count($request->seat_ids)) {
@@ -93,6 +153,9 @@ class TicketController extends Controller
         $totalBeforeDiscount = $seatPrices + $productPrices;
 
         $discount = $this->calculateDiscount($request->promo_code_id, $totalBeforeDiscount);
+        //Giới hạn mã giảm giá chỉ được giảm tối đa 50% giá vé
+        $maxDiscount = $totalBeforeDiscount * 0.5;
+        $discount = min($discount, $maxDiscount);
         $totalAmount = $totalBeforeDiscount - $discount;
 
         $ticketCode = now()->format('Ymd') . random_int(100000, 999999);

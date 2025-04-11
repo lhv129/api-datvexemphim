@@ -140,8 +140,8 @@ class PaymentMethodController extends Controller
                     'redirect_url' => env('FRONTEND_URL') . '/?payment=success'
                 ]);
             } else {
-                $ticket->ticketDetails()->delete();
-                $ticket->ticketProductDetails()->delete();
+                $ticket->ticketDetails->each->delete();
+                $ticket->ticketProductDetails->each->delete();
                 $ticket->delete();
                 return response()->json([
                     'status' => 'success',
