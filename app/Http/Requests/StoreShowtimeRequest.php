@@ -107,7 +107,7 @@ class StoreShowtimeRequest extends FormRequest
             ],
             'start_time' => 'required|date_format:Y-m-d H:i:s',
             'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
-            'date' => 'required|date_format:Y-m-d|after' . $movie->release_date. '|before:' . $movie->date ,
+            'date' => 'required|date_format:Y-m-d|after:' . $movie->release_date . '|before:' . $movie->end_date,
         ];
     }
 
