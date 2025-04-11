@@ -107,7 +107,7 @@ class StoreShowtimeRequest extends FormRequest
             ],
             'start_time' => 'required|date_format:Y-m-d H:i:s',
             'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
-            'date' => 'required|date_format:Y-m-d|after:' . $movie->release_date . '|before:' . $movie->end_date,
+            'date' => 'required|date_format:Y-m-d|after:' . Carbon::parse($movie->release_date)->subDays(1)->toString() . '|before:' . $movie->end_date,
         ];
     }
 
@@ -129,7 +129,7 @@ class StoreShowtimeRequest extends FormRequest
             'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
             'date.required' => 'Vui lòng chọn ngày chiếu.',
             'date.date_format' => 'Ngày chiếu phải đúng định dạng (Y-m-d).',
-            'date.after' => 'Ngày chiếu phải sau ngày khởi chiếu của phim ' . $movie->release_date ,
+            'date.after' => 'Ngày chiếu phải sau ngày khởi chiếu của phim, phim này được công chiếu vào  ' . $movie->release_date ,
             'date.before' => 'Phim đã quá thời gian chiếu của hệ thống rạp.'
         ];
     }
