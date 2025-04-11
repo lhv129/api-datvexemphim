@@ -14,13 +14,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
-
+use App\Models\Showtime;
 
 class MovieController extends Controller
 {
     public function index()
     {
+        $today = now()->toDateString();
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
+            ->where('end_date', '>=', $today)
+            ->where('deleted_at', null)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -54,6 +57,7 @@ class MovieController extends Controller
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
             ->where('release_date', '<=', $today)
             ->where('end_date', '>=', $today)
+            ->where('deleted_at', null)
             ->get();
 
         $dataMovie = $movies->map(function ($movie) {
@@ -86,6 +90,7 @@ class MovieController extends Controller
         $today = now()->toDateString();
         $movies = Movie::select('id', 'title', 'description', 'poster', 'fileName', 'trailer', 'duration', 'rating', 'release_date', 'end_date')
             ->where('release_date', '>', $today)
+            ->where('deleted_at', null)
             ->orderBy('release_date', 'asc') // Sắp xếp theo ngày phát hành tăng dần (tùy chọn)
             ->get();
 
@@ -146,6 +151,7 @@ class MovieController extends Controller
                 'duration' => $movie->duration,
                 'rating' => $movie->rating,
                 'release_date' => $movie->release_date,
+                'end_date' => $movie->end_date,
             ];
         });
         return $this->responseCommon(200, "Lấy danh sách phim thành công.", $dataMovie);
@@ -302,24 +308,37 @@ class MovieController extends Controller
     {
         try {
             $movie = Movie::findOrFail($id);
+            $today = now()->toDateString();
 
-            // Đường dẫn ảnh
-            $imageDirectory = 'images/movies/';
-            // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
-            File::delete($imageDirectory . $movie->fileName);
+            //Kiểm tra xem xuất chiếu đó đã hết thời gian công chiếu chưa
+            if ($movie->end_date > $today) {
 
-            //Xóa luôn những thể loại phim đó.
-            $movie_genres = Movie_genre::where('movie_id', $id)->delete();
+                // Lấy ra các suất chiếu của phim đó
+                $exitstingShowtime = Showtime::select('showtimes.*')
+                    ->where('date', '>=', $today)
+                    ->where('movie_id', $movie->id)
+                    ->get();
 
-            //Xóa luôn những diễn viên phim đó.
-            $actor_movies = Actor_movie::where('movie_id', $id)->delete();
-
-            //Xóa luôn bình luận về phim đó.
-            $reviews = Review::where('movie_id', $id)->delete();
-
-            $movie->delete();
-
-            return $this->responseCommon(200, "Xóa phim thành công.", []);
+                if ($exitstingShowtime->count() > 0) {
+                    //Nếu phim đó còn suất chiếu của ngày hôm nay và những ngày sắp tới thì không được xóa
+                    return $this->responseCommon(400, "Phim vẫn đang được chiếu ở những suất chiếu sau, không được phép xóa.", $exitstingShowtime);
+                } else {
+                    // Xóa mềm những xuất chiếu liên quan tới phim đó
+                    Showtime::where('movie_id', $movie->id)
+                        ->update(['deleted_at' => now()]);
+                    // Xóa mềm phim
+                    $movie->delete();
+                    return $this->responseCommon(200, "Xóa phim thành công.", []);
+                }
+            } elseif ($movie->end_date < $today) {
+                // Phim hết thời gian công chiếu thì mặc định xóa được
+                // // Đường dẫn ảnh
+                // $imageDirectory = 'images/movies/';
+                // // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
+                // File::delete($imageDirectory . $movie->fileName);
+                $movie->delete();
+                return $this->responseCommon(200, "Xóa phim thành công.", []);
+            }
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Phim này không tồn tại hoặc đã bị xóa.", []);
         }
