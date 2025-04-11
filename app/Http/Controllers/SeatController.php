@@ -47,7 +47,7 @@ class SeatController extends Controller
             ->join('seats','ticket_details.seat_id','=','seats.id' )
             ->where('tickets.showtime_id', $request->showtime_id)
             ->where('seats.status','available')
-            ->where('tickets.status','paid')
+            ->where('tickets.status',['paid','used'])
             ->select('ticket_details.seat_id', 'tickets.id as ticket_id')
             ->get();
 
