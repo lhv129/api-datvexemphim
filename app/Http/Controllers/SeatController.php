@@ -67,56 +67,84 @@ class SeatController extends Controller
         ], 200);
     }
 
-
-
     public function store(StoreSeatRequest $request)
     {
         try {
             $screen_id = $request->input('screen_id');
             $row = strtoupper($request->input('row'));
-            $seat_count = $request->input('number');
-            $type = $request->input('type', 'Ghế Thường');
+            $couple_count = (int)$request->input('number'); // Số cặp ghế đôi
+            $type = strtolower($request->input('type', 'normal'));
             $price = $request->input('price');
-            // $status = $request->input('status');
 
             $seats = [];
-            for ($i = 1; $i <= $seat_count; $i++) {
-                $seat_number = str_pad($i, 2, '0', STR_PAD_LEFT);
 
-                // Kiểm tra xem ghế đã tồn tại chưa
-                $existingSeat = Seat::where([
-                    ['screen_id', '=', $screen_id],
-                    ['row', '=', $row],
-                    ['number', '=', $seat_number],
-                    ['deleted_at', '=', null],
-                ])->exists();
+            // Kiểm tra nếu là couple thì số ghế phải là số cặp
+            if ($type === 'couple') {
+                for ($i = 0; $i < $couple_count; $i++) {
+                    $seat_number_1 = ($i * 2) + 1;
+                    $seat_number_2 = $seat_number_1 + 1;
+                    $seat_number = $seat_number_1 . ' ' . $seat_number_2;
+                    $seat_code = $row . $seat_number_1 . ' ' . $row . $seat_number_2; // Ví dụ: H1H2
 
-                if (!$existingSeat) {
-                    $seats[] = [
-                        'screen_id' => $screen_id,
-                        'row' => $row,
-                        'number' => $seat_number,
-                        'type' => $type,
-                        'price' => $price,
-                        // 'status' => $status,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                    $existingSeat = Seat::where('screen_id', $screen_id)
+                        ->where('seat_code', $seat_code)
+                        ->whereNull('deleted_at')
+                        ->exists();
+
+                    if (!$existingSeat) {
+                        $seats[] = [
+                            'screen_id' => $screen_id,
+                            'row' => $row,
+                            'number' => $seat_number,
+                            'type' => ucfirst($type),
+                            'price' => $price,
+                            'seat_code' => $seat_code,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            } else {
+                // Ghế thường/VIP
+                for ($i = 1; $i <= $couple_count; $i++) {
+                    $seat_number = $i;
+                    $seat_code = $row . $seat_number;
+
+                    $existingSeat = Seat::where([
+                        ['screen_id', '=', $screen_id],
+                        ['row', '=', $row],
+                        ['number', '=', $seat_number],
+                        ['deleted_at', '=', null],
+                    ])->exists();
+
+                    if (!$existingSeat) {
+                        $seats[] = [
+                            'screen_id' => $screen_id,
+                            'row' => $row,
+                            'number' => $seat_number,
+                            'type' => ucfirst($type),
+                            'price' => $price,
+                            'seat_code' => $seat_code,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
                 }
             }
 
             if (!empty($seats)) {
                 Seat::insert($seats);
                 return $this->responseCommon(201, "Thêm " . count($seats) . " ghế thành công.", $seats);
+            } else {
+                return $this->responseError(409, "Tất cả các ghế đã tồn tại.",[]);
             }
+
         } catch (\Exception $e) {
             return $this->responseError(500, "Lỗi xử lý.", [
                 'error' => $e->getMessage()
             ]);
         }
     }
-
-
 
     public function update(UpdateSeatRequest $request, $id) {
         try {
