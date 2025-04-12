@@ -6,16 +6,15 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
     public function index()
     {
         $products = Product::select('id', 'code', 'name', 'price', 'image', 'fileName')
+            ->where('deleted_at',null)
             ->get();
         return $this->responseCommon(200, "Lấy danh sách sản phẩm thành công.", $products);
     }
@@ -97,15 +96,13 @@ class ProductController extends Controller
     {
         try {
             $product = Product::findOrFail($id);
-
             // Đường dẫn ảnh
             $imageDirectory = 'images/products/';
             // Xóa sản phẩm thì xóa luôn ảnh sản phẩm đó
             File::delete($imageDirectory . $product->fileName);
-
             $product->delete();
-
             return $this->responseCommon(200, "Xóa sản phẩm thành công.", []);
+
         } catch (\Exception $e) {
             return $this->responseCommon(404, "Sản phẩm này không tồn tại hoặc đã bị xóa.", []);
         }
