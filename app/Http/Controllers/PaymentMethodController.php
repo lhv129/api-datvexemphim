@@ -82,8 +82,8 @@ class PaymentMethodController extends Controller
                 // Lấy thông tin vé + ghế ngồi + suất chiếu
                 $showtime = $ticket->showtime;
                 $cinema = $showtime->screen->cinema;
-                $seats = $ticket->ticketDetails->pluck('seat.number')->toArray();
-                $seatList = implode(',', $seats);
+                $seats = $ticket->ticketDetails()->with('seat')->get();
+                $seatList = $seats->pluck('seat.seat_code')->implode(', ');
                 $total_price = number_format($ticket->total_amount, 0, ',', '.') . 'đ';
 
                 // Lấy danh sách sản phẩm kèm số lượng và giá
@@ -91,10 +91,6 @@ class PaymentMethodController extends Controller
                 $productList = $products->map(function ($item) {
                     return $item->product->name . ': ' . $item->quantity . ' x ' . number_format($item->product->price, 0, ',', '.') . 'đ';
                 })->implode(', ');
-
-                // Lấy danh sách ghế kết hợp row + number
-                $seats = $ticket->ticketDetails()->with('seat')->get();
-                $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
 
                 //  Tạo mã vạch từ mã vé
                 $barcodeGenerator = new DNS1D();
