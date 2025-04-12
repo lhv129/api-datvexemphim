@@ -53,8 +53,8 @@ class StoreShowtimeRequest extends FormRequest
             $movie = Movie::find($movieId);
             if($movie) {
                 $movieDuration = $movie->duration;
-                if($showtimeDuration < $movieDuration) {
-                    $validator->errors()->add('end_time','Thời gian suất chiếu phải lớn hơn hoặc bằng thời lượng phim.');
+                if($showtimeDuration !== $movieDuration) {
+                    $validator->errors()->add('end_time','Thời gian suất chiếu phải bằng thời lượng phim.');
                     return;
                 }
             }
