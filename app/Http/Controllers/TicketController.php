@@ -29,7 +29,7 @@ class TicketController extends Controller
 
         $data = $tickets->map(function ($ticket) {
             $seats = $ticket->ticketDetails()->with('seat')->get();
-            $seatList = $seats->map(fn($item) => $item->seat->row . $item->seat->number)->implode(',');
+            $seatList = $seats->pluck('seat.seat_code')->implode(', ');
             return [
                 'ticket_id' => $ticket->id,
                 'ticket_code' => $ticket->code,
@@ -90,38 +90,39 @@ class TicketController extends Controller
             return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
         }
         //check ghế đôi
-        foreach ($seats as $seat) {
-            // Chỉ kiểm tra nếu là ghế đôi
-            if ($seat->type === 'Ghế đôi') {
-                // Xác định số ghế còn lại trong cặp
-                if ($seat->number % 2 == 0) {
-                    $pairNumber = $seat->number - 1; // chẵn → lẻ trước
-                } else {
-                    $pairNumber = $seat->number + 1; // lẻ → chẵn sau
-                }
+        // foreach ($seats as $seat) {
+        //     // Chỉ kiểm tra nếu là ghế đôi
+        //     if ($seat->type === 'Ghế đôi') {
+        //         // Xác định số ghế còn lại trong cặp
+        //         if ($seat->number % 2 == 0) {
+        //             $pairNumber = $seat->number - 1; // chẵn → lẻ trước
+        //         } else {
+        //             $pairNumber = $seat->number + 1; // lẻ → chẵn sau
+        //         }
 
-                // Tìm ghế đôi còn lại
-                $pairedSeat = Seat::where('row', $seat->row)
-                    ->where('number', $pairNumber)
-                    ->where('screen_id', $seat->screen_id)
-                    ->where('status', 'available')
-                    ->first();
+        //         // Tìm ghế đôi còn lại
+        //         $pairedSeat = Seat::where('row', $seat->row)
+        //             ->where('number', $pairNumber)
+        //             ->where('screen_id', $seat->screen_id)
+        //             ->where('status', 'available')
+        //             ->first();
 
-                // Nếu ghế đôi còn lại tồn tại mà không nằm trong danh sách ghế được chọn thì báo lỗi
-                if ($pairedSeat && !in_array($pairedSeat->id, $request->seat_ids)) {
-                    return $this->responseError(
-                        400,
-                        "Ghế {$seat->row}{$seat->number} là ghế đôi, bạn phải đặt kèm với ghế {$pairedSeat->row}{$pairedSeat->number}."
-                    );
-                }
-            }
-        }
+        //         // Nếu ghế đôi còn lại tồn tại mà không nằm trong danh sách ghế được chọn thì báo lỗi
+        //         if ($pairedSeat && !in_array($pairedSeat->id, $request->seat_ids)) {
+        //             return $this->responseError(
+        //                 400,
+        //                 "Ghế {$seat->row}{$seat->number} là ghế đôi, bạn phải đặt kèm với ghế {$pairedSeat->row}{$pairedSeat->number}."
+        //             );
+        //         }
+        //     }
+        // }
 
         //check 2 ghế cách nhau
-        $groupedSeats = $seats->groupBy('row');
+        $normalSeats = $seats->filter(fn($seat) => $seat->type !== 'Ghế đôi');
+        $groupedSeats = $normalSeats->groupBy('row');
 
         foreach ($groupedSeats as $row => $rowSeats) {
-            $selectedNumbers = $rowSeats->pluck('number')->sort()->values()->toArray();
+            $selectedNumbers = $rowSeats->pluck('number')->map(fn($num) => (int) $num)->sort()->values()->toArray();
 
             if (count($selectedNumbers) > 1) {
                 $first = $selectedNumbers[0];
@@ -139,28 +140,33 @@ class TicketController extends Controller
                     }
                 }
             }
-
-            //Không được để trống ghế đầu hoặc cuối hàng nếu chọn ghế sát bên trong
-            $allNumbers = Seat::where('row', $row)
+            // Lấy toàn bộ ghế trong hàng từ DB
+            $allSeats = Seat::where('row', $row)
                 ->where('screen_id', $showtime->screen_id)
-                ->pluck('number')
-                ->sort()
-                ->values()
-                ->toArray();
+                ->where('type', '!=', 'Ghế đôi') // bỏ ghế đôi luôn từ DB
+                ->get()
+                ->sortBy(fn($seat) => (int) $seat->number)
+                ->values();
 
-            if (empty($allNumbers))
+            if ($allSeats->isEmpty())
                 continue;
+
+            // Tạo mảng số ghế đầy đủ
+            $allNumbers = $allSeats->pluck('number')->map(fn($n) => (int) $n)->values()->toArray();
 
             $minSeat = $allNumbers[0];
             $maxSeat = end($allNumbers);
 
+            // Check ghế đầu: nếu chọn ghế kế bên mà không chọn ghế đầu
             if (in_array($minSeat + 1, $selectedNumbers) && !in_array($minSeat, $selectedNumbers)) {
-                return $this->responseError(400, "Không được bỏ trống ghế: $row$minSeat.");
+                return $this->responseError(400, "Không được bỏ trống ghế đầu hàng: $row$minSeat.");
             }
 
+            // Check ghế cuối: nếu chọn ghế sát cuối mà không chọn ghế cuối
             if (in_array($maxSeat - 1, $selectedNumbers) && !in_array($maxSeat, $selectedNumbers)) {
-                return $this->responseError(400, "Không được bỏ trống ghế: $row$maxSeat.");
+                return $this->responseError(400, "Không được bỏ trống ghế cuối hàng: $row$maxSeat.");
             }
+
         }
 
 
@@ -175,7 +181,13 @@ class TicketController extends Controller
         // Tăng giá vé nếu suất chiếu vào thứ 7 hoặc Chủ nhật
         $dayOfWeek = Carbon::parse($showtime->date)->dayOfWeek;
         if ($dayOfWeek === Carbon::SATURDAY || $dayOfWeek === Carbon::SUNDAY) {
-            $seatPrices += 10000 * count($seats);
+            foreach ($seats as $seat) {
+                if ($seat->type === 'Ghế đôi') {
+                    $seatPrices += 20000;
+                } else {
+                    $seatPrices += 10000;
+                }
+            }
         }
 
         try {
@@ -231,14 +243,8 @@ class TicketController extends Controller
             return $this->responseError(404, 'Vé không tồn tại hoặc không thuộc về bạn.');
         }
 
-        // Tính tổng tiền ghế
         $seatPrices = $ticket->ticketDetails->sum('price');
-
-        // Tính tổng tiền sản phẩm
-        $productPrices = $ticket->ticketProductDetails->sum(function ($productDetail) {
-            return $productDetail->price;
-        });
-
+        $productPrices = $ticket->ticketProductDetails->sum('price');
         $totalBeforeDiscount = $seatPrices + $productPrices;
 
         // Kiểm tra và tính giảm giá
@@ -258,6 +264,7 @@ class TicketController extends Controller
                 return [
                     'seat_row' => $detail->seat->row,
                     'seat_number' => $detail->seat->number,
+                    'seat_code' => $detail->seat->seat_code,
                     'price' => number_format($detail->price, 0, ',', '.') . ' đ'
                 ];
             }),
@@ -270,6 +277,8 @@ class TicketController extends Controller
                 ];
             }),
             'total_amount' => number_format($totalBeforeDiscount, 0, ',', '.') . ' đ',
+            'seat_price' => number_format($seatPrices, 0, ',', '.') . ' đ',
+            'product_price' => number_format($productPrices, 0, ',', '.') . ' đ',
             'promo_code' => optional($ticket->promoCode)->code ?? null,
             'discount' => number_format($discount, 0, ',', '.') . ' đ',
             'final_amount' => number_format($finalAmount, 0, ',', '.') . ' đ',
@@ -319,11 +328,23 @@ class TicketController extends Controller
 
     private function saveTicketDetails($ticket, $seats, $products)
     {
+        $dayOfWeek = \Carbon\Carbon::parse($ticket->showtime->date)->dayOfWeek;
+
         foreach ($seats as $seat) {
+            $price = $seat->price;
+
+            // Áp dụng phụ thu nếu là thứ 7 hoặc Chủ nhật
+            if ($dayOfWeek === \Carbon\Carbon::SATURDAY || $dayOfWeek === \Carbon\Carbon::SUNDAY) {
+                if ($seat->type === 'Ghế đôi') {
+                    $price += 20000;
+                } else {
+                    $price += 10000;
+                }
+            }
             TicketDetail::create([
                 'ticket_id' => $ticket->id,
                 'seat_id' => $seat->id,
-                'price' => $seat->price
+                'price' => $price
             ]);
         }
 
@@ -359,11 +380,19 @@ class TicketController extends Controller
     }
 
     //admin
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $tickets = Ticket::with(['user', 'showtime.movie'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Ticket::with(['user', 'showtime.movie'])
+            ->orderBy('created_at', 'desc');
+
+        // Nếu có truyền tham số 'date', thì lọc theo ngày của suất chiếu
+        if ($request->has('date')) {
+            $query->whereHas('showtime', function ($q) use ($request) {
+                $q->whereDate('start_time', $request->date);
+            });
+        }
+
+        $tickets = $query->get();
 
         $data = $tickets->map(function ($ticket) {
             return [
@@ -415,6 +444,7 @@ class TicketController extends Controller
                 return [
                     'seat_row' => $detail->seat->row,
                     'seat_number' => $detail->seat->number,
+                    'seat_code' => $detail->seat->seat_code,
                     'price' => number_format($detail->price, 0, ',', '.') . ' đ'
                 ];
             }),
@@ -427,6 +457,8 @@ class TicketController extends Controller
                 ];
             }),
             'total_amount' => number_format($totalBeforeDiscount, 0, ',', '.') . ' đ',
+            'seat_price' => number_format($seatPrices, 0, ',', '.') . ' đ',
+            'product_price' => number_format($productPrices, 0, ',', '.') . ' đ',
             'promo_code' => optional($ticket->promoCode)->code ?? null,
             'discount' => number_format($discount, 0, ',', '.') . ' đ',
             'final_amount' => number_format($finalAmount, 0, ',', '.') . ' đ',
