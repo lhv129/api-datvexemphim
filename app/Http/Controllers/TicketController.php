@@ -139,6 +139,28 @@ class TicketController extends Controller
                     }
                 }
             }
+
+            //Không được để trống ghế đầu hoặc cuối hàng nếu chọn ghế sát bên trong
+            $allNumbers = Seat::where('row', $row)
+                ->where('screen_id', $showtime->screen_id)
+                ->pluck('number')
+                ->sort()
+                ->values()
+                ->toArray();
+
+            if (empty($allNumbers))
+                continue;
+
+            $minSeat = $allNumbers[0];
+            $maxSeat = end($allNumbers);
+
+            if (in_array($minSeat + 1, $selectedNumbers) && !in_array($minSeat, $selectedNumbers)) {
+                return $this->responseError(400, "Không được bỏ trống ghế: $row$minSeat.");
+            }
+
+            if (in_array($maxSeat - 1, $selectedNumbers) && !in_array($maxSeat, $selectedNumbers)) {
+                return $this->responseError(400, "Không được bỏ trống ghế: $row$maxSeat.");
+            }
         }
 
 
@@ -149,7 +171,18 @@ class TicketController extends Controller
         // }
 
         $seatPrices = $seats->sum('price');
-        $productPrices = $this->calculateProductPrices($request->products);
+
+        // Tăng giá vé nếu suất chiếu vào thứ 7 hoặc Chủ nhật
+        $dayOfWeek = Carbon::parse($showtime->date)->dayOfWeek;
+        if ($dayOfWeek === Carbon::SATURDAY || $dayOfWeek === Carbon::SUNDAY) {
+            $seatPrices += 10000 * count($seats);
+        }
+
+        try {
+            $productPrices = $this->calculateProductPrices($request->products);
+        } catch (\Exception $e) {
+            return $this->responseError(400, $e->getMessage());
+        }
         $totalBeforeDiscount = $seatPrices + $productPrices;
 
         $discount = $this->calculateDiscount($request->promo_code_id, $totalBeforeDiscount);
@@ -252,7 +285,12 @@ class TicketController extends Controller
         $productPrices = 0;
         if ($products) {
             foreach ($products as $product) {
-                $productInfo = Product::find($product['product_id']);
+                $productInfo = Product::withTrashed()->find($product['product_id']);
+
+                if (!$productInfo || $productInfo->trashed()) {
+                    throw new \Exception("Sản phẩm ID {$product['product_id']} đã bị xóa, không thể đặt.");
+                }
+
                 $productPrices += $productInfo->price * $product['quantity'];
             }
         }
@@ -411,8 +449,21 @@ class TicketController extends Controller
             ], 400);
         }
 
-        // Tìm vé theo mã vạch
-        $ticket = Ticket::where('code', $barcode)->first();
+
+        $today = Carbon::today()->toDateString();
+
+        $ticket = Ticket::where('code', $barcode)
+            ->whereHas('showtime', function ($query) use ($today) {
+                $query->whereDate('date', $today);
+            })
+            ->first();
+
+        if (!$ticket) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Vé không tồn tại hoặc không áp dụng cho hôm nay'
+            ], 404);
+        }
 
         if (!$ticket) {
             return response()->json([
@@ -425,6 +476,13 @@ class TicketController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Vé đã được sử dụng!'
+            ], 400);
+        }
+
+        if ($ticket->status === 'expired') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Vé đã hết hạn, suất chiếu đã kết thúc!'
             ], 400);
         }
 
