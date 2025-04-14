@@ -81,7 +81,7 @@ class TicketController extends Controller
         $reservedSeats = DB::table('ticket_details')
             ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
             ->where('tickets.showtime_id', $request->showtime_id)
-            ->where('tickets.status', 'paid')
+            ->whereIn('tickets.status', ['paid', 'used', 'pending'])
             ->whereIn('ticket_details.seat_id', $request->seat_ids)
             ->pluck('ticket_details.seat_id')
             ->toArray();
@@ -128,22 +128,49 @@ class TicketController extends Controller
                 $first = $selectedNumbers[0];
                 $last = end($selectedNumbers);
 
-                // Chỉ kiểm tra nếu khoảng cách giữa ghế đầu và cuối nhỏ hơn hoặc bằng 2
-                if (($last - $first) <= 2) {
-                    $expected = range($first, $last);
+                // Khoảng ghế liên tiếp cần được chọn đủ
+                $expected = range($first, $last);
 
-                    if ($selectedNumbers !== $expected) {
-                        $missing = array_diff($expected, $selectedNumbers);
-                        $missingText = implode(', ', array_map(fn($num) => $row . $num, $missing));
+                // Ghế ở giữa bị bỏ qua
+                $missing = array_diff($expected, $selectedNumbers);
 
+                if (!empty($missing)) {
+                    // Lấy tất cả ghế (ID) trong khoảng missing
+                    $missingSeatData = Seat::where('row', $row)
+                        ->where('screen_id', $showtime->screen_id)
+                        ->whereIn('number', $missing)
+                        ->where('type', '!=', 'Ghế đôi')
+                        ->get()
+                        ->keyBy('number');
+
+                    // Lấy danh sách các seat_id trong khoảng missing
+                    $missingSeatIds = $missingSeatData->pluck('id')->toArray();
+
+                    // Lấy các seat_id đã được đặt
+                    $reservedSeatIds = DB::table('ticket_details')
+                        ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+                        ->where('tickets.showtime_id', $showtime->id)
+                        ->whereIn('tickets.status', ['paid', 'used', 'pending'])
+                        ->whereIn('ticket_details.seat_id', $missingSeatIds)
+                        ->pluck('ticket_details.seat_id')
+                        ->toArray();
+
+                    // So sánh: nếu ghế nào trong missing không bị đặt thì báo lỗi
+                    $stillEmpty = collect($missingSeatData)->filter(function ($seat) use ($reservedSeatIds) {
+                        return !in_array($seat->id, $reservedSeatIds);
+                    });
+
+                    if ($stillEmpty->isNotEmpty()) {
+                        $missingText = $stillEmpty->keys()->map(fn($num) => $row . $num)->implode(', ');
                         return $this->responseError(400, "Không được để trống ghế ở giữa: $missingText.");
                     }
                 }
+
             }
-            // Lấy toàn bộ ghế trong hàng từ DB
+            // Lấy toàn bộ ghế trong hàng (không gồm ghế đôi)
             $allSeats = Seat::where('row', $row)
                 ->where('screen_id', $showtime->screen_id)
-                ->where('type', '!=', 'Ghế đôi') // bỏ ghế đôi luôn từ DB
+                ->where('type', '!=', 'Ghế đôi')
                 ->get()
                 ->sortBy(fn($seat) => (int) $seat->number)
                 ->values();
@@ -151,20 +178,43 @@ class TicketController extends Controller
             if ($allSeats->isEmpty())
                 continue;
 
-            // Tạo mảng số ghế đầy đủ
+            // Mảng số ghế
             $allNumbers = $allSeats->pluck('number')->map(fn($n) => (int) $n)->values()->toArray();
+            $seatMap = $allSeats->keyBy(fn($seat) => (int) $seat->number); // Map từ số ghế → seat object
 
             $minSeat = $allNumbers[0];
             $maxSeat = end($allNumbers);
 
-            // Check ghế đầu: nếu chọn ghế kế bên mà không chọn ghế đầu
+            // Check ghế đầu
             if (in_array($minSeat + 1, $selectedNumbers) && !in_array($minSeat, $selectedNumbers)) {
-                return $this->responseError(400, "Không được bỏ trống ghế đầu hàng: $row$minSeat.");
+                $seatId = $seatMap[$minSeat]->id ?? null;
+
+                $isReserved = DB::table('ticket_details')
+                    ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+                    ->where('tickets.showtime_id', $showtime->id)
+                    ->whereIn('tickets.status', ['paid', 'used', 'pending'])
+                    ->where('ticket_details.seat_id', $seatId)
+                    ->exists();
+
+                if (!$isReserved) {
+                    return $this->responseError(400, "Không được bỏ trống ghế đầu hàng: $row$minSeat.");
+                }
             }
 
-            // Check ghế cuối: nếu chọn ghế sát cuối mà không chọn ghế cuối
+            // Check ghế cuối
             if (in_array($maxSeat - 1, $selectedNumbers) && !in_array($maxSeat, $selectedNumbers)) {
-                return $this->responseError(400, "Không được bỏ trống ghế cuối hàng: $row$maxSeat.");
+                $seatId = $seatMap[$maxSeat]->id ?? null;
+
+                $isReserved = DB::table('ticket_details')
+                    ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+                    ->where('tickets.showtime_id', $showtime->id)
+                    ->whereIn('tickets.status', ['paid', 'used', 'pending'])
+                    ->where('ticket_details.seat_id', $seatId)
+                    ->exists();
+
+                if (!$isReserved) {
+                    return $this->responseError(400, "Không được bỏ trống ghế cuối hàng: $row$maxSeat.");
+                }
             }
 
         }

@@ -10,7 +10,7 @@ class Ticket extends Model
 {
     use HasFactory;
 
-    use SoftDeletes;
+    // use SoftDeletes;
     protected $fillable = [
         'user_id',
         'showtime_id',
