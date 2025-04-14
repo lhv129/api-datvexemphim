@@ -79,7 +79,16 @@ class UserController extends Controller
             ]);
             return $this->responseCommon(200, "Cập nhật người dùng thành công.", $user);
         } catch (\Exception $e) {
-            return $this->responseError(404, "Người dùng này không tồn tại hoặc đã bị xóa.", $e->getMessage());
+            return $this->responseError(404, "Người dùng này không tồn tại hoặc đã bị xóa.",[]);
+        }
+    }
+
+    public function show($id){
+        try {
+            $user = User::findOrFail($id);
+            return $this->responseCommon(200, "Tìm thấy người dùng thành công.", $user);
+        } catch (\Exception $e) {
+            return $this->responseError(404, "Người dùng này không tồn tại hoặc đã bị xóa.",[]);
         }
     }
 
