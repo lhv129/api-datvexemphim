@@ -229,16 +229,16 @@ class TicketController extends Controller
         $seatPrices = $seats->sum('price');
 
         // Tăng giá vé nếu suất chiếu vào thứ 7 hoặc Chủ nhật
-        $dayOfWeek = Carbon::parse($showtime->date)->dayOfWeek;
-        if ($dayOfWeek === Carbon::SATURDAY || $dayOfWeek === Carbon::SUNDAY) {
-            foreach ($seats as $seat) {
-                if ($seat->type === 'Ghế đôi') {
-                    $seatPrices += 20000;
-                } else {
-                    $seatPrices += 10000;
-                }
-            }
-        }
+        // $dayOfWeek = Carbon::parse($showtime->date)->dayOfWeek;
+        // if ($dayOfWeek === Carbon::SATURDAY || $dayOfWeek === Carbon::SUNDAY) {
+        //     foreach ($seats as $seat) {
+        //         if ($seat->type === 'Ghế đôi') {
+        //             $seatPrices += 20000;
+        //         } else {
+        //             $seatPrices += 10000;
+        //         }
+        //     }
+        // }
 
         try {
             $productPrices = $this->calculateProductPrices($request->products);
@@ -362,11 +362,11 @@ class TicketController extends Controller
 
         if ($promo_code_id) {
             $promo = Promo_code::find($promo_code_id);
-            if ($promo && $promo->status === 'active') {
-                $today = now()->toDateString();
-
+            $showtime = Showtime::find(request()->showtime_id);
+            if ($promo && $promo->status === 'active' && $showtime) {
+                $showtimeDate = $showtime->date;
                 // Kiểm tra thời gian hiệu lực
-                if ($promo->start_date <= $today && $promo->end_date >= $today) {
+                if ($promo->start_date <= $showtimeDate && $promo->end_date >= $showtimeDate) {
                     $discount = $promo->discount_amount;
                 }
             }
@@ -378,19 +378,19 @@ class TicketController extends Controller
 
     private function saveTicketDetails($ticket, $seats, $products)
     {
-        $dayOfWeek = \Carbon\Carbon::parse($ticket->showtime->date)->dayOfWeek;
+        // $dayOfWeek = \Carbon\Carbon::parse($ticket->showtime->date)->dayOfWeek;
 
         foreach ($seats as $seat) {
             $price = $seat->price;
 
             // Áp dụng phụ thu nếu là thứ 7 hoặc Chủ nhật
-            if ($dayOfWeek === \Carbon\Carbon::SATURDAY || $dayOfWeek === \Carbon\Carbon::SUNDAY) {
-                if ($seat->type === 'Ghế đôi') {
-                    $price += 20000;
-                } else {
-                    $price += 10000;
-                }
-            }
+            // if ($dayOfWeek === \Carbon\Carbon::SATURDAY || $dayOfWeek === \Carbon\Carbon::SUNDAY) {
+            //     if ($seat->type === 'Ghế đôi') {
+            //         $price += 20000;
+            //     } else {
+            //         $price += 10000;
+            //     }
+            // }
             TicketDetail::create([
                 'ticket_id' => $ticket->id,
                 'seat_id' => $seat->id,
