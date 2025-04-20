@@ -71,6 +71,16 @@ Route::middleware(['auth:api', 'checkRole:1,2,3'])->group(function () {
     //Api update profile
     Route::put('profile/update', [AuthController::class, 'updateProfile']);
 
+    // Route dành cho admin,stafff
+    Route::middleware(['auth:api', 'checkRole:1,2'])->group(function () {
+
+
+        //Api ticket
+        Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
+        Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow'])->name('adminShow');
+        Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
+        Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
+    });
 
     // Route dành cho admin
     Route::middleware(['auth:api', 'checkRole:1'])->group(function () {
@@ -130,12 +140,6 @@ Route::middleware(['auth:api', 'checkRole:1,2,3'])->group(function () {
         Route::post('blogs/create', [BlogController::class, 'store']);
         Route::put('blogs/update/{id}', [BlogController::class, 'update']);
         Route::delete('blogs/delete/{id}', [BlogController::class, 'destroy']);
-
-        //Api ticket
-        Route::get('/admin/tickets', [TicketController::class, 'adminIndex']);
-        Route::get('/admin/tickets/{id}', [TicketController::class, 'adminShow'])->name('adminShow');
-        Route::post('/admin/tickets/check', [TicketController::class, 'checkTicket']);
-        Route::post('admin/tickets/confirm', [TicketController::class, 'confirmTicketUsage']);
 
         //Api users
         Route::get('users', [UserController::class, 'index']);
