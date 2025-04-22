@@ -79,40 +79,32 @@ class PaymentMethodController extends Controller
             if ($inputData['vnp_ResponseCode'] == '00') {
                 $ticket->update(['status' => 'paid']);
 
-                // Lấy thông tin vé + ghế ngồi + suất chiếu
                 $showtime = $ticket->showtime;
                 $cinema = $showtime->screen->cinema;
                 $seats = $ticket->ticketDetails()->with('seat')->get();
                 $seatList = $seats->pluck('seat.seat_code')->implode(', ');
                 $total_price = number_format($ticket->total_amount, 0, ',', '.') . 'đ';
 
-                // Lấy danh sách sản phẩm kèm số lượng và giá
                 $products = $ticket->ticketProductDetails()->with('product')->get();
                 $productList = $products->map(function ($item) {
                     return $item->product->name . ': ' . $item->quantity . ' x ' . number_format($item->product->price, 0, ',', '.') . 'đ';
                 })->implode(', ');
 
-                //  Tạo mã vạch từ mã vé
                 $barcodeGenerator = new DNS1D();
                 $barcodeData = $barcodeGenerator->getBarcodePNG($ticket->code, "C128", 2.5, 80, [0, 0, 0], true);
 
-                //  Đặt tên file mã vạch dựa trên mã vé
                 $barcodeName = $ticket->code . '.png';
                 $barcodeDirectory = 'images/tickets/barcodes/';
                 $barcodePath = public_path($barcodeDirectory . $barcodeName);
 
-                //  Tạo thư mục nếu chưa có
                 if (!file_exists(public_path($barcodeDirectory))) {
                     mkdir(public_path($barcodeDirectory), 0777, true);
                 }
 
-                //  Lưu mã vạch thành file ảnh PNG
                 file_put_contents($barcodePath, base64_decode($barcodeData));
 
-                //  Đường dẫn mã vạch để nhúng vào email
                 $barcodeUrl = public_path($barcodeDirectory . $barcodeName);
 
-                // Tạo dữ liệu email
                 $emailData = [
                     'ticket_code' => $ticket->code,
                     'movie_name' => $showtime->movie->title,
@@ -128,7 +120,6 @@ class PaymentMethodController extends Controller
                     'barcode_url' => $barcodeUrl,
                 ];
 
-                // Gửi email
                 Mail::to($emailData['user_email'])->send(new TicketMail($emailData));
 
                 return response()->json([
