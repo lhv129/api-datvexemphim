@@ -66,7 +66,7 @@ class TicketController extends Controller
         // Truy vấn danh sách ghế có trong phòng chiếu
         $seats = Seat::whereIn('id', $request->seat_ids)
             ->where('screen_id', $showtime->screen_id)
-            ->where('status', 'available') // Chỉ lấy ghế đang hoạt động
+            ->where('status', 'available')
             ->get();
 
         // Kiểm tra ghế không hợp lệ
@@ -89,33 +89,6 @@ class TicketController extends Controller
         if (!empty($reservedSeats)) {
             return $this->responseError(400, 'Ghế đã được đặt: ' . implode(', ', $reservedSeats));
         }
-        //check ghế đôi
-        // foreach ($seats as $seat) {
-        //     // Chỉ kiểm tra nếu là ghế đôi
-        //     if ($seat->type === 'Ghế đôi') {
-        //         // Xác định số ghế còn lại trong cặp
-        //         if ($seat->number % 2 == 0) {
-        //             $pairNumber = $seat->number - 1; // chẵn → lẻ trước
-        //         } else {
-        //             $pairNumber = $seat->number + 1; // lẻ → chẵn sau
-        //         }
-
-        //         // Tìm ghế đôi còn lại
-        //         $pairedSeat = Seat::where('row', $seat->row)
-        //             ->where('number', $pairNumber)
-        //             ->where('screen_id', $seat->screen_id)
-        //             ->where('status', 'available')
-        //             ->first();
-
-        //         // Nếu ghế đôi còn lại tồn tại mà không nằm trong danh sách ghế được chọn thì báo lỗi
-        //         if ($pairedSeat && !in_array($pairedSeat->id, $request->seat_ids)) {
-        //             return $this->responseError(
-        //                 400,
-        //                 "Ghế {$seat->row}{$seat->number} là ghế đôi, bạn phải đặt kèm với ghế {$pairedSeat->row}{$pairedSeat->number}."
-        //             );
-        //         }
-        //     }
-        // }
 
         //check 2 ghế cách nhau
         $normalSeats = $seats->filter(fn($seat) => $seat->type !== 'Ghế đôi');
@@ -128,14 +101,11 @@ class TicketController extends Controller
                 $first = $selectedNumbers[0];
                 $last = end($selectedNumbers);
 
-                // Khoảng ghế liên tiếp cần được chọn đủ
                 $expected = range($first, $last);
 
-                // Ghế ở giữa bị bỏ qua
                 $missing = array_diff($expected, $selectedNumbers);
 
                 if (!empty($missing)) {
-                    // Lấy tất cả ghế (ID) trong khoảng missing
                     $missingSeatData = Seat::where('row', $row)
                         ->where('screen_id', $showtime->screen_id)
                         ->whereIn('number', $missing)
@@ -143,10 +113,8 @@ class TicketController extends Controller
                         ->get()
                         ->keyBy('number');
 
-                    // Lấy danh sách các seat_id trong khoảng missing
                     $missingSeatIds = $missingSeatData->pluck('id')->toArray();
 
-                    // Lấy các seat_id đã được đặt
                     $reservedSeatIds = DB::table('ticket_details')
                         ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
                         ->where('tickets.showtime_id', $showtime->id)
@@ -155,7 +123,6 @@ class TicketController extends Controller
                         ->pluck('ticket_details.seat_id')
                         ->toArray();
 
-                    // So sánh: nếu ghế nào trong missing không bị đặt thì báo lỗi
                     $stillEmpty = collect($missingSeatData)->filter(function ($seat) use ($reservedSeatIds) {
                         return !in_array($seat->id, $reservedSeatIds);
                     });
@@ -167,7 +134,6 @@ class TicketController extends Controller
                 }
 
             }
-            // Lấy toàn bộ ghế trong hàng (không gồm ghế đôi)
             $allSeats = Seat::where('row', $row)
                 ->where('screen_id', $showtime->screen_id)
                 ->where('type', '!=', 'Ghế đôi')
@@ -178,9 +144,8 @@ class TicketController extends Controller
             if ($allSeats->isEmpty())
                 continue;
 
-            // Mảng số ghế
             $allNumbers = $allSeats->pluck('number')->map(fn($n) => (int) $n)->values()->toArray();
-            $seatMap = $allSeats->keyBy(fn($seat) => (int) $seat->number); // Map từ số ghế → seat object
+            $seatMap = $allSeats->keyBy(fn($seat) => (int) $seat->number);
 
             $minSeat = $allNumbers[0];
             $maxSeat = end($allNumbers);
@@ -221,24 +186,8 @@ class TicketController extends Controller
 
 
 
-        // $seats = Seat::whereIn('id', $request->seat_ids)->get();
-        // if ($seats->count() != count($request->seat_ids)) {
-        //     return $this->responseError(400, 'Một số ghế không hợp lệ.');
-        // }
 
         $seatPrices = $seats->sum('price');
-
-        // Tăng giá vé nếu suất chiếu vào thứ 7 hoặc Chủ nhật
-        // $dayOfWeek = Carbon::parse($showtime->date)->dayOfWeek;
-        // if ($dayOfWeek === Carbon::SATURDAY || $dayOfWeek === Carbon::SUNDAY) {
-        //     foreach ($seats as $seat) {
-        //         if ($seat->type === 'Ghế đôi') {
-        //             $seatPrices += 20000;
-        //         } else {
-        //             $seatPrices += 10000;
-        //         }
-        //     }
-        // }
 
         try {
             $productPrices = $this->calculateProductPrices($request->products);
@@ -267,16 +216,11 @@ class TicketController extends Controller
         ]);
 
         $this->saveTicketDetails($ticket, $seats, $request->products);
-        // Seat::whereIn('id', $request->seat_ids)->update(['status' => 'booked']);
 
         if ($request->payment_method_id == '1') {
             $paymentController = new PaymentMethodController();
             return $paymentController->createPayment(new Request(['ticket_id' => $ticket->id]));
         }
-
-        // if (in_array($request->payment_method_id, [1, 2])) {
-        //     $ticket->update(['status' => 'paid']);
-        // }
 
         return $this->responseCommon(200, 'Tạo vé thành công.', $ticket);
     }
@@ -297,10 +241,8 @@ class TicketController extends Controller
         $productPrices = $ticket->ticketProductDetails->sum('price');
         $totalBeforeDiscount = $seatPrices + $productPrices;
 
-        // Kiểm tra và tính giảm giá
         $discount = $ticket->discount_price ?? $this->calculateDiscount($ticket->promo_code_id, $totalBeforeDiscount);
 
-        // Tính tổng tiền cuối cùng
         $finalAmount = $totalBeforeDiscount - $discount;
 
         $response = [
@@ -365,7 +307,6 @@ class TicketController extends Controller
             $showtime = Showtime::find(request()->showtime_id);
             if ($promo && $promo->status === 'active' && $showtime) {
                 $showtimeDate = $showtime->date;
-                // Kiểm tra thời gian hiệu lực
                 if ($promo->start_date <= $showtimeDate && $promo->end_date >= $showtimeDate) {
                     $discount = $promo->discount_amount;
                 }
@@ -378,19 +319,9 @@ class TicketController extends Controller
 
     private function saveTicketDetails($ticket, $seats, $products)
     {
-        // $dayOfWeek = \Carbon\Carbon::parse($ticket->showtime->date)->dayOfWeek;
-
         foreach ($seats as $seat) {
             $price = $seat->price;
 
-            // Áp dụng phụ thu nếu là thứ 7 hoặc Chủ nhật
-            // if ($dayOfWeek === \Carbon\Carbon::SATURDAY || $dayOfWeek === \Carbon\Carbon::SUNDAY) {
-            //     if ($seat->type === 'Ghế đôi') {
-            //         $price += 20000;
-            //     } else {
-            //         $price += 10000;
-            //     }
-            // }
             TicketDetail::create([
                 'ticket_id' => $ticket->id,
                 'seat_id' => $seat->id,
@@ -435,7 +366,6 @@ class TicketController extends Controller
         $query = Ticket::with(['user', 'showtime.movie'])
             ->orderBy('created_at', 'desc');
 
-        // Nếu có truyền tham số 'date', thì lọc theo ngày của suất chiếu
         if ($request->has('date')) {
             $query->whereHas('showtime', function ($q) use ($request) {
                 $q->whereDate('start_time', $request->date);
@@ -470,18 +400,14 @@ class TicketController extends Controller
             return $this->responseError(404, 'Vé không tồn tại.');
         }
 
-        // Tính tổng giá trước khi giảm giá
         $seatPrices = $ticket->ticketDetails->sum('price');
         $productPrices = $ticket->ticketProductDetails->sum('price');
         $totalBeforeDiscount = $seatPrices + $productPrices;
 
-        // Kiểm tra và tính lại giảm giá
         $discount = $ticket->discount_price ?? $this->calculateDiscount($ticket->promo_code_id, $totalBeforeDiscount);
 
-        // Tính tổng tiền sau giảm giá
         $finalAmount = $totalBeforeDiscount - $discount;
 
-        // Chuẩn bị dữ liệu phản hồi
         $response = [
             'ticket_id' => $ticket->id,
             'ticket_code' => $ticket->code,
@@ -521,7 +447,6 @@ class TicketController extends Controller
 
     public function checkTicket(Request $request)
     {
-        // Lấy barcode từ body
         $barcode = $request->input('barcode');
 
         if (!$barcode) {
@@ -568,7 +493,6 @@ class TicketController extends Controller
             ], 400);
         }
 
-        // Cập nhật trạng thái vé
         $ticket->update(['status' => 'used']);
 
         return redirect()->route('adminShow', ['id' => $ticket->id])
@@ -589,7 +513,6 @@ class TicketController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Vé đã được sử dụng!'], 400);
         }
 
-        // Cập nhật trạng thái vé
         $ticket->update(['status' => 'used']);
 
         return response()->json(['status' => 'success', 'message' => 'Vé đã được xác nhận và sử dụng!']);
