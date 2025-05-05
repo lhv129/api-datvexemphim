@@ -105,31 +105,27 @@ class TicketController extends Controller
 
                 $missing = array_diff($expected, $selectedNumbers);
 
-                if (!empty($missing)) {
-                    $missingSeatData = Seat::where('row', $row)
+                if (count($missing) === 1) {
+                    $missingNumber = reset($missing);
+
+                    $missingSeat = Seat::where('row', $row)
                         ->where('screen_id', $showtime->screen_id)
-                        ->whereIn('number', $missing)
+                        ->where('number', $missingNumber)
                         ->where('type', '!=', 'Ghế đôi')
-                        ->get()
-                        ->keyBy('number');
+                        ->first();
 
-                    $missingSeatIds = $missingSeatData->pluck('id')->toArray();
+                    if ($missingSeat) {
+                        $isReserved = DB::table('ticket_details')
+                            ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
+                            ->where('tickets.showtime_id', $showtime->id)
+                            ->whereIn('tickets.status', ['paid', 'used', 'pending'])
+                            ->where('ticket_details.seat_id', $missingSeat->id)
+                            ->exists();
 
-                    $reservedSeatIds = DB::table('ticket_details')
-                        ->join('tickets', 'ticket_details.ticket_id', '=', 'tickets.id')
-                        ->where('tickets.showtime_id', $showtime->id)
-                        ->whereIn('tickets.status', ['paid', 'used', 'pending'])
-                        ->whereIn('ticket_details.seat_id', $missingSeatIds)
-                        ->pluck('ticket_details.seat_id')
-                        ->toArray();
-
-                    $stillEmpty = collect($missingSeatData)->filter(function ($seat) use ($reservedSeatIds) {
-                        return !in_array($seat->id, $reservedSeatIds);
-                    });
-
-                    if ($stillEmpty->isNotEmpty()) {
-                        $missingText = $stillEmpty->keys()->map(fn($num) => $row . $num)->implode(', ');
-                        return $this->responseError(400, "Không được để trống ghế ở giữa: $missingText.");
+                        if (!$isReserved) {
+                            $missingText = $row . $missingNumber;
+                            return $this->responseError(400, "Không được để trống ghế ở giữa: $missingText.");
+                        }
                     }
                 }
 
