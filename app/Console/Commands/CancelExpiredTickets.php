@@ -56,10 +56,5 @@ class CancelExpiredTickets extends Command
                 Log::info('[tickets:cancel-expired] Vé ID ' . $ticket->id . ' chuyển sang expired.');
             }
         }
-        // Gửi thông báo đến Slack sau khi xử lý xong
-        $message = '[🎟️ FilmGO] Đã chạy lệnh tickets:cancel-expired lúc ' . now();
-        Http::post(env('SLACK_WEBHOOK_URL'), [
-            'text' => $message,
-        ]);
     }
 }
